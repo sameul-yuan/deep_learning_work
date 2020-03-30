@@ -1,11 +1,23 @@
 # 文本挖掘和NLP相关内容
 ## 1.  主题模型（待补充...)
-- lSA(隐语义分析)
-- LDA（隐迪力特雷）
-- pLDA
-
-![分布式表示](./assets/distpresentation.PNG)
+1. 词在文档中不考虑顺序（BOW)
+2. 文档生成
+- unigram-model
+- pLSA(概率隐语义分析)
+    - 规律：相同主题的词经常出现在同一文档中，不同主题的词很少出现在同一文档中
+    - 模型假设： 整个语料共享K个主题，每个主题都有生成单词的概率分布，每个docement是K个主题的混合（混合比例固定）；
+    - 求解方法：
+        - 矩阵分解
+        - EM
+- LDA（隐Delichilet分析）
+    - 贝叶斯版本的pLSA(先验概率)
+    - documents i 的主题分布和主题单词分布假设服从dirichlet先验(dirichlet为多项式分布的共轭分布)
+    - 求解方法：
+        - 变分推断
+        - 吉布斯采样
 ## 2. 词向量
+- 概览
+![分布式表示](./assets/distpresentation.PNG)
 1. 基于全局矩阵分解
     - VSM(向量空间模型)
         - document-word 矩阵$\mathbf{W_{ij}}$，矩阵元素可以是单词是否出现（0，1）或者单词的统计特征tf-idf
@@ -55,20 +67,28 @@
 1. transform（attention is all your need):
     - 基于attention机制实现的特征提取，可代替CNN，RNN来提取序列特征，容易并行化
     - encoder-decoder
+         ![GPTv1](./assets/trm.jpg)
     - encoder的每层为两个子层：
         - multi-head self-attention
-            - 能捕获双向关系$Attention(\mathbf{Q},\mathbf{K},\mathbf{V}) = softmatx(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}})\mathbf{V}$
+            - 能捕获双向关系$Attention(\mathbf{Q},\mathbf{K},\mathbf{V}) = softmax(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}})\mathbf{V}$
             - self-attention的输入输出维度一致（隐层维度）
-            - multi-head从不从维度提取序列特征
-            - 同一个head在不同层共享参数，有多少个head i的参数为$\mathbf{W}_q^i,\mathbf{W}_k^i,\mathbf{W}_v^i$
+            - multi-head从不从表示空间提取序列特征
+            - 同一个head在不同层共享参数，有多少个head i的参数为$\mathbf{W}_q^i,\mathbf{W}_k^i,\mathbf{W}_v^i$  
+            - multi-head的输出最后级联转换到输入一样的维度
+            <!-- !['multi-head](./assets/qkv.PNG) -->
+            - <img src="./assets/qkv.PNG" width = "80%" height = "100%" div align="center" />
    
+
         - FFN
             - $\vec{O}_m=\mathbf{W_2}.Relu(\mathbf{W_1}\vec{v}_m+\vec{b_1}) + \vec{b_2}$
             - 输入输出维度一致
+            - 同一层不同位置使用的参数相同
+            - 不同层使用的参数不同
         - 每个子层都使用残差连接 + layerNorm
         - 每个子层的输入序列长度和输出序列长度一致,
     - decoder每层有三个子层
         - mask-self attention 屏蔽序列后的单词，位置i的attention只依赖之前的结果
+            - 通过将softmax对应于mask位置的输入置为$-\infty$实现
         - decoder encoder attention 捕获输出输出直接的关系，query 来自前一个 decoder 层的输出,key和value来自encoder
         - FFN (和encoder类似)
     - input
