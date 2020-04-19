@@ -11,7 +11,7 @@
         - 多模型并行训练，共享训练数据，单独保存参数
 - 深度学习方法
     - DSSM (deep structrued semantic Model)->搜索广告
-        - 基于监query和document对的点击规律监督学习query和document的低维语义表示
+        - 基于query和document对的点击规律监督学习query和document的低维语义表示
         - LSA:是通过单词的document-word的矩阵SVD降维学习
         - Word-hash: 每个word根据其char-level的n-gram来表示
             - 不同的单词形态在char-level空间接近
