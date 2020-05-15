@@ -97,27 +97,56 @@
 
 
 
-
-    
-
-         
-
-
-
-        
-
-         
-
-
-    
-    
-
-
-
+---
 # 图网络与推荐系统
 GNN的限制：
 - 容易受到攻击： 修改节点属性，增删边
 - 对图的区别能力： 不同层聚合需要满足injective neighbor aggegation（一一映射), injective multi-set function: $\Phi(\sum_{x \in S}f(x))$
+## 1、图的基本方法
+1. spatial-based (根据空间上的邻居关系进行聚合)：
+    - `GraphSage`（inductive,引导式)： 
+        - 邻居采样
+        - mean/max-pooling/LSTM 聚合邻拒信息
+    - `GAT` : attention 聚合邻居信息
+    - `GIN`:(graph isomorphism network)
+        - 它证明了最佳的聚合更新方式: 对于某个节点 v，它在第 k 层的隐层应该要把它全部的邻居都加起来后，再加上某一个常量乘上节点自身的隐层，再通过一个线性映射。我们要用sum，而不是mean或max，是因为对于有两个邻居的节点和有三个邻居的节点，mean和max都无法区分它们是不同的图。
+        $$
+        h_v^{k} = MLP^{(k)}\left((1+\epsilon^k).h_v^{(k-1)} + \sum_{u\in \mathcal{N}(v)}h_u^{(k-1)} \right)
+        $$
+2. spectral-based
+    - spectral-graph theory
+        - graph laplacian $L=D-A$, $L\succeq 0$(半正定)
+        - $L = {U}\Lambda U^T$
+        - 最小特征值$\lambda _0=0, \vec{u}_0 = \frac{1}{N}[1,1,\cdots,1]^T$
+        - $f^TLf = \frac{1}{2}\underset{v_i \in V}{\sum}\underset{v_j \in V}{\sum}w_{i,j}\left(f(v_i)-f(v_j)\right)^2$, 反应了节点间的信号变化强度，$w_{i,j}$为边权，
+        - $y = \underbrace{U}_{逆变换}g_{\theta}\underbrace{(\Lambda)\underbrace{U^Tx}_{谱变换}}_{谱变换乘积}$
+    - polynomial parametrize
+        - $g_{\theta}(\Lambda) = \sum_{k=0}^{K}\theta_{k}\Lambda^k$, K 个参数,O($N^2$)的计算复杂度
+    - ChebNet
+        - chebyshev polynomial 
+        - $y = g_{\theta^{'}}(L)x$
+    - GCN（transductive,直推式不利于拓展)
+        - 一阶chebyshev近似
+        - $y = g_{\theta^{'}}(L)x = \theta(I + D^{-\frac{1}{2}}{A}D^{-\frac{1}{2}} =  \theta(\tilde{D}^{-\frac{1}{2}}\tilde{A}\tilde{D}^{-\frac{1}{2}})$
+        - $H^{(l+1)} = \sigma\left(\tilde{D}^{-\frac{1}{2}}\tilde{A}\tilde{D}^{-\frac{1}{2}}H^{l}W^{l}\right)$
+        - alse rewritten as 
+        >$h_v = f\left(\frac{1}{\left|\mathcal{N}(v)\right|} \sum_{u\in \mathcal{N}(v)}Wx_u+b\right)$  
+        > 邻居节点的加权均值  
+        > 过度平滑的问题：节点的特征收敛到一个和输入无关的子空间
+            >1. 连通分量越多，over-smooth越不明显示 
+            >2. randomwalk, attention 缓解
+            >3. redisual, denseNet连接  
+            >4. 对角加载，自身节点加强
+            >5. 通过不同尺度感受野的组合对提高模型对节点的表征能力(类似Inception)
+
+
+    
+
+## 2、异构图
+1. meta-path: 连接两个对象的复合关系，定义了一种语义捕获结构
+2. 基于不同的meta-path在每个meta-path中进行节点级别的聚合
+3. 同一节点在不同的meta-path中进行语义级别的聚合
+## APPDENDIX（papers)
 ## session-based recommendation with gnn  
 1. 在一个session中只有session中有限的用户历史行为序列
 2. session的行为序列构成一副子图，不同的session构成一个全局图

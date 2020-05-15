@@ -84,7 +84,8 @@
 - case class
 - 可new 可不new
 - 参数默认有getter、setter方法，对外可见
-- 重写了equals,toString等方法
+- 重写了equals,toString等方法 
+- 自动生成一个伴生对象，该伴生对象自动生成apply,unapply模板代码
 
 ### 1.8 偏函数
 - def fun:PartionlFunction[String,int]={case ...}
