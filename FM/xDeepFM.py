@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import tensorflow as tf 
+from losses import focal_loss,weighted_binary_crossentropy
+from utils import Dataset
 
 class xDeepFM(object):
     def __init__(self, config, seed=2019):
@@ -8,17 +10,20 @@ class xDeepFM(object):
         self._feature_size = config.pop('feature_size')
         self._field_size = config.pop('field_size')
         self.embedding_size = config.pop('embedding_size')
-        self.keep_prob = config.pop('keep_prob')
+        self.feed_keep_prob = config.pop('keep_prob')
         self.cross_layer_sizes = config.pop('cross_layer_sizes')
         self.dnn_layer_sizes = config.pop('dnn_layer_sizes')
-        self._check_config(config)
+        self.learning_rate = config.pop('learning_rate')
+        self.checkpoint_dir = config.pop('checkpoint_dir')
+        # self._check_config(config)
         self.config = config
-        self.logits = self.build()
+        self.build()
         
     def _check_config(self,config):
         if isinstance(config, dict):
             keys = set(config.keys())
-            allow_keys=['cin_filter_latent_dim','cin_activate','cin_resblock_hidden_size','cin_resblock_hidden_activate']
+            allow_keys=['cin_filter_latent_dim','cin_activate','cin_resblock_hidden_size','cin_resblock_hidden_activate','l2_reg',
+                        'use_resblock','split_connect','reduce_filter_complexity','add_bias']
             diffs = keys.difference(allow_keys)
             if diffs:
                 raise ValueError('unknown configuratios:{}'.format(diffs))              
@@ -28,35 +33,15 @@ class xDeepFM(object):
     def _init_placeholders(self):
         self.feat_value = tf.placeholder(shape=[None,None], dtype= tf.float32)
         self.feat_index = tf.placeholder(shape=[None,None], dtype=tf.int32)
-        self.label = tf.placeholder(shpae=[None,1],dtype=tf.float32)
-        self.keep_prob = tf.placeholder(shape=[], dtype=tf.float32,name='keep_prob')
+        self.label = tf.placeholder(shape=[None,1],dtype=tf.float32)
+        self.keep_prob = tf.placeholder(shape=[], dtype=tf.bool,name='keep_prob')
         self.is_training = tf.placeholder(tf.bool, shape=[],name='is_training')
         self.global_step = tf.Variable(0, trainable=False, name='global_step')
-
-    def build(self):
-        use_resblock= self.config.get('use_resblock',False)
-        split_connect self.config.get('split_connect',True)
-        reduce_filter_complexity = self.config.get('reduce_filter_complexity',True)
-        add_bias = self.config.get('add_bias',False)
-
-        self._init_placeholders()
-        emb_out, emb_merge_size = self._build_embedding()
-        linear_logits = self._build_linear() 
-        cin_logits = self._build_cin(emb_out, use_resblock=use_resblock, split_connect=split_connect, 
-                                    reduce_filter_complexity=reduce_filter_complexity,add_bias=add_bias)
-        dnn_logits = self._build_dnn(emb_out)
-        logits = tf.add_n([linear_logits,cin_logits,dnn_logits])
-        self.prob = tf.nn.sigmoid(logits)
-
-        self.loss, self.entropy_loss, self.reg_loss = self.compute_loss()
-        self.train_op = self.backward()
-        self.saver = tf.train.Saver(max_to_keep=3)
-        return logits
 
     def _build_embedding(self):
         #None: batch_sze
         #F: field_size
-        #k: embedding_size
+        #k: embbeding_size
         with tf.variable_scope('embedding') as scope:
             self.fm_embedding = tf.get_variable('embedding', shape=[self._feature_size, self.embedding_size],
                                     initializer=tf.truncated_normal_initializer(stddev=0.1),dtype=tf.float32)
@@ -79,7 +64,7 @@ class xDeepFM(object):
             linear_out = tf.add(xw,self.linear_bias)
         return linear_out # None * 1
 
-    def _build_cin(self, emb_out, use_resblock=False, split_connect=True, reduce_d=False, add_bias=False):
+    def _build_cin(self, emb_out, use_resblock=False, split_connect=True, reduce_filter_complexity=False, add_bias=False):
         # hk: field_size of next layer
         h0 = self._field_size
         hk = h0
@@ -95,7 +80,7 @@ class xDeepFM(object):
                 dots = tf.reshape(dots, shape=[self.embedding_size,-1, h0*hk]) # k*None* (F*hk)
                 dots = tf.transpose(dots, perm=[1,0,2]) # None * k *(F*hk)
 
-                if reduce_d:
+                if reduce_filter_complexity:
                     latent_dim = self.config.get('cin_filter_latent_dim',2)
                     filter0 = tf.get_variable('filter0_'+str(index),
                                 shape=[1,next_hk, h0,latent_dim],dtype=tf.float32)
@@ -141,7 +126,7 @@ class xDeepFM(object):
                 block_w = tf.get_variable('resblock_hidden_w',shape=[cin_out_size, hidden_size],dtype=tf.float32)
                 block_b = tf.get_variable('resblock_hidden_b',shape=[hidden_size],dtyep=tf.float32,initializer=tf.zeros_initializer())
                 hidden_input = tf.nn.xw_plus_b(result, block_w, block_b)
-                activate = tf.config.get('cin_resblock_hidden_activate',tf.nn.relue)
+                activate = tf.config.get('cin_resblock_hidden_activate',tf.nn.relu)
                 hidden_out = activate(hidden_input) #None* hidden_size
 
                 merge_w = tf.get_variable('resblock_merge_w', shape=[hidden_size+cin_out_size,1],dtype=tf.float32)
@@ -168,36 +153,118 @@ class xDeepFM(object):
             output = tf.layers.dense(nn_input,1, kernel_initializer=tf.truncated_normal_initializer(stddev=0.1))
         return output #None*1
 
+    def build(self):
+        use_resblock = self.config.get('use_resblock',False)
+        split_connect = self.config.get('split_connect',True)
+        reduce_filter_complexity = self.config.get('reduce_filter_complexity',False)
+        add_bias = self.config.get('add_bias',False)
+
+        self._init_placeholders()
+        emb_out, emb_merge_size = self._build_embedding()
+        linear_logits = self._build_linear() 
+        cin_logits = self._build_cin(emb_out, use_resblock=use_resblock, split_connect=split_connect, 
+                                    reduce_filter_complexity=reduce_filter_complexity, add_bias=add_bias)
+        dnn_logits = self._build_dnn(emb_out)
+        self.logits = tf.add_n([linear_logits,cin_logits,dnn_logits])
+        self.prob = tf.nn.sigmoid(self.logits)
+
+        self.loss, self.entropy_loss,self.reg_loss = self.compute_loss()
+
+        self.train_op = self.backward()
+        self.saver = tf.train.Saver(max_to_keep=3)
+        
+
     def compute_loss(self):
-        labels = tf.reshape(self.label,[-1])
+        labels = tf.reshape(self.label, [-1])
         logits = tf.reshape(self.logits, [-1])
-        cel = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits))
-        #reg loss
-        params = tf.get_collections(tf.GraphKeys.TRAINABLE_VARIABLES)
-        params = [p for p in params if 'bias' not in p.name]
-        l2_reg = self.config.get('l2_reg',0.01)
-        regloss = tf.add_n([tf.contrib.layers.l2_regularizer(l2_reg)(p) for p in params])
-        loss = cel + regloss
-        return loss, cel, regloss
-    
+        ce_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits))
+
+        #regularization loss
+        params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+        params = [param for param in params if 'bias' not in param.name]
+        l2_reg = self.config.get('l2_reg', 0.001)
+        reg_loss =tf.add_n([tf.contrib.layers.l2_regularizer(l2_reg)(param) for param in params])
+        
+        loss = ce_loss + reg_loss
+        return loss, ce_loss, reg_loss
+
     def backward(self):
-        lr = tf.train.exponential_decay(self.learning_rate, self.global_step, 3000, 0.99,staircase=False)
-        opt = tf.train.AdamOptimizer(lr)
-        train_vars = tf.trainable_variables()
-        update_ops = tf.collections(tf.GraphKeys.UPDATE_OPS)
-        gradients = tf.gradient(self.loss, train_vars) # sum for params but not for input 
-        clip_grads,_ = tf.clip_by_global_norm(gradients,5)
+        learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step,3000, 0.99, staircase=False)
+        opt = tf.train.AdamOptimizer(learning_rate)
+        # opt = tf.train.GradientDescentOptimizer(self.learning_rate)
+        trainable_params = tf.trainable_variables()
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        gradients = tf.gradients(self.loss, trainable_params) # auto divide batch_size for param, but not for input
+        clip_gradients, _ = tf.clip_by_global_norm(gradients, 5)
         with tf.control_dependencies(update_ops):
             train_op = opt.minimize(self.loss, global_step = self.global_step)
-            #train_op = opt.apply_gradients(zip(clip_gradients, train_vars), global_step = self.global_step)
+            # train_op = opt.apply_gradients(zip(clip_gradients, trainable_params), global_step=self.global_step)    
         return train_op
 
+    def train(self, sess, feat_index, feat_value, label):
+        _, step = sess.run([self.train_op, self.global_step], feed_dict={
+            self.feat_index: feat_index,
+            self.feat_value: feat_value,
+            self.label: label,
+            self.keep_prob: self.feed_keep_prob,
+            self.is_training:True})
+        return  step
 
+    def predict(self, sess, feat_index, feat_value, batch_size=None):
+        if batch_size is None:
+            prob = sess.run([self.prob], feed_dict={
+                self.feat_index: feat_index,
+                self.feat_value: feat_value,
+                self.keep_prob: 1,
+                self.is_training:False})[0]
+        else:
+            data =Dataset(feat_value, feat_index, [None]*len(feat_index), batch_size, shuffle=False)
+            probs =[]
+            for feat_index, feat_value, _ in data:
+                prob = sess.run([self.prob], feed_dict={
+                self.feat_index: feat_index,
+                self.feat_value: feat_value,
+                self.keep_prob: 1,
+                self.is_training:False})[0]
+                probs.append(prob.ravel())
 
+            prob = np.concatenate(probs)
 
+        return prob.ravel()
+    
+    def evaluate(self, sess, feat_index, feat_value, label, batch_size=None):
+        tloss, entloss,regloss = 0,0,0
+        if batch_size is None:
+            tloss, entloss,regloss = sess.run([self.loss, self.entropy_loss, self.reg_loss],feed_dict={
+                                            self.feat_index: feat_index,
+                                            self.feat_value: feat_value,
+                                            self.label: label,
+                                            self.keep_prob: 1,
+                                            self.is_training:False})
+        else:
+            data = Dataset(feat_value,feat_index,label, batch_size, shuffle=False)
+            for i, (feat_index, feat_value, label) in enumerate(data,1):
+                _tloss, _entloss, _regloss = sess.run([self.loss, self.entropy_loss, self.reg_loss],feed_dict={
+                                                self.feat_index: feat_index,
+                                                self.feat_value: feat_value,
+                                                self.label: label,
+                                                self.keep_prob: 1,
+                                                self.is_training:False})
+                tloss  = tloss+ (_tloss-tloss)/i 
+                entloss = entloss + (_entloss-entloss)/i
+                regloss = regloss + (_regloss-regloss)/i
 
+        return tloss, entloss, regloss
 
+    def save(self, sess, path, global_step):
+        if self.saver is not None:
+            self.saver.save(sess, save_path=path, global_step= global_step)
 
+    def restore(self, sess, path):
+        model_file = tf.train.latest_checkpoint(path)
+        if model_file is not None:
+            print('restore model:', model_file)
+            self.saver.restore(sess, save_path=model_file)
 
 
             
