@@ -22,7 +22,7 @@
     - VSM(向量空间模型)
         - document-word 矩阵$\mathbf{W_{ij}}$，矩阵元素可以是单词是否出现（0，1）或者单词的统计特征tf-idf
         - 文档相似度： $sim(Di,Dj) = cos(\mathbb{w_i},\mathbb{w_j})$
-
+    - 共现矩阵
     - LSA(latent semantic anaysis)/LSI
         - document-word 矩阵进行SVD分解 $\mathbb{D}=\mathbf{P}\mathbf{\Sigma}\mathbf{Q^T}$
         - $\mathbf{P}$为文档-主题矩阵
@@ -31,11 +31,21 @@
 
 2. 基于上下文Word2vec:
     - CBOW
+        - 多个单词到一个（起到smoothing作用，善于预测出现次数多的单词)
     - skip-gram
-3. 基于全局矩阵+上下文
+        - 适用small data
+        - 对出现次数比较少词预测效果好（中心词->上下文有很多的样本)
+
+3. 基于全局矩阵(共现矩阵)+上下文
     - glove
+    - 所有语料中单词k出现在单词i上下文的占比/单词k出现在单词j上下文的占比 有一定的规律,词向量应该提箱相同的规律;
     - $F(\mathbb{\vec{w}_i},\mathbb{\vec{w}_j},\mathbb{\vec{w}_k}) = \frac{P_{i,k}}{P_{j,k}}$
-    - 所有语料中单词k出现在单词i上下文的占比/单词k出现在单词j上下文的占比 有一定的规律
+    -  $F(\mathbb{\vec{w}_i},\mathbb{\vec{w}_j},\mathbb{\vec{w}_k})$根据数学理论课设置为$e^{(\vec{w}_i-\vec{w}_j)*\vec{w}_k}$
+    - $P_{i,k} = \frac{X_{i,k}}{X_{i}}$
+    - 对数变换并加偏置项保持对称性
+    - $log(X_{i,j}) = \vec{w}_i^T*\vec{w}_j + b_i + b_j $
+    - 损失函数 $J=\sum_{i,j}^{N} f(X_{i,j})(\vec{w}_i^T*\vec{w}_j + b_i + b_j -log(X_{i,j}))^2$
+        >$f(X_{i,j})$为权重
 
 - fastText
     - 与CBOW类似，但是是直接对文本进行分类
@@ -167,15 +177,17 @@
         - NER: 单词级别分类任务，每个输出位置softmax,这里隐含假设每个 token 的 NER label 与周围其它单词无关
     - tokenization: wordPiece(递归组合相邻频繁项)
     - 后续模型的改进
-        1. whole word mask： 在该版本中一个单词要么没有被 mask、要么该单词所有的 workpiece token 都被 mask 
+        1. whole word mask(bert_wwm)： 在该版本中一个单词要么没有被 mask、要么该单词所有的 workpiece token 都被 mask 
             > wordpiece可能导致的问题是可能只mask掉一个单词的piece，导致预测的只是单词的一部分，实际是一个错误的预测目标
-        2. 动态mask机制，不在预处理阶段静态mask而后续一直采用该mask的训练，每次想模型输入时执行动态mask。
+        2. 动态mask机制(RoBERTa)，不在预处理阶段静态mask而后续一直采用该mask的训练，每次想模型输入时执行动态mask。
+        3. 使用更长的序列训练(RoBERTa)
         
 
 6. AIBERT
     - A light BERT
     - 优化点
         - 矩阵拆分减少参数量
+        - 交叉层参数共享
         - NSP->SOP(sentence order prediction)
         - no dropout 
 
@@ -191,7 +203,7 @@
         - 其预训练阶段的预训练任务可以持续的、增量的构建
 
  8. XLNet
-     - auto aggressive model(e.g, GPT)： 生成式模型，它无法对双向上下文进行建模
+     - auto aggressive model(e.g, GPT)： 生成式模型用于数据序列生成,它无法对双向上下文进行建模
      - auto encoder decoder model(e.g, BERT)： 判别式模型，自编码语言模型是双向的可以使用双向上下文
         - 在预训练期间引入噪声 [MASK]，而在下游任务中该噪声并不存在，这使得预训练和微调之间产生差距
         - 自编码语言模型假设序列中各位置处的 [MASK] 彼此独立，即：预测目标独立性假设
@@ -226,6 +238,11 @@
     - MT-DNN(multi-task DNN)
         - 底层采用BERT结构，底层网络共享
         - 顶层结果根据任务的不同而不同
+
+10. 模型压缩
+    - sparse prior(bayesian compression): 各种先验
+    - sparse matrix factrorization (ALBERT)
+    - knowledge distillation(tinyBERT)
 
 
 
