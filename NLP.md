@@ -94,7 +94,7 @@
             - 输入输出维度一致
             - 同一层不同位置使用的参数相同
             - 不同层使用的参数不同
-        - 每个子层都使用残差连接 + layerNorm
+        - 每个子层都使用残差连接(相加) + layerNorm(CHW)
         - 每个子层的输入序列长度和输出序列长度一致,
     - decoder每层有三个子层
         - mask-self attention 屏蔽序列后的单词，位置i的attention只依赖之前的结果
@@ -158,7 +158,7 @@
     - 将预训练模型用于下游任务有两种策略
         - 基于微调的策略： 该策略在预训练期间通过单向语言模型来学习通用语言representation，而单向语言模型严重限制了预训练模型的表达能力
         - 基于特征的策略： 如 ELMo ，将预训练模型的representation 作为下游任务模型的额外特征。该策略虽然是双向语言模型，但是该模型是浅层的
-        - BERT 是一个同时利用了左右双向上下文的、深度的预训练模型
+        - BERT 是一个同时利用了左右双向上下文的、深度的预训练模型(Masked Language Model)
     - BERT 预训练模型包含两个预训练任务：
         - 预测被屏蔽的单词(masked language model)15%, denoise auto-encoder, maximize mask位置的最大似然
             >1. 原始的序列为$(w_1,w_2,\cdots,w_n)$
@@ -181,6 +181,11 @@
             > wordpiece可能导致的问题是可能只mask掉一个单词的piece，导致预测的只是单词的一部分，实际是一个错误的预测目标
         2. 动态mask机制(RoBERTa)，不在预处理阶段静态mask而后续一直采用该mask的训练，每次想模型输入时执行动态mask。
         3. 使用更长的序列训练(RoBERTa)
+        4. 知识蒸馏(tinyBert)
+    - 实际使用
+        - 筛选训练数据， 剔除过长和过段的数据
+        - 尝试bert+conv, bert+conv+avg_max_pooling,bert_last_layer_concat
+        - 实际场景数据进行进一步预训练
         
 
 6. AIBERT
