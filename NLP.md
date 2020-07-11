@@ -3,16 +3,35 @@
 1. 词在文档中不考虑顺序（BOW)
 2. 文档生成
 - unigram-model
+    - 单词独立生成
+    - 最大似然估计 
+        >$p(\theta_v) = \frac{n_v}{n}$, 数据集D中wordv出现的频次/数据集中单词的总个数n
+    - 最后后验估计: 参数的似然分布为多项分布，先验假设为Dilichlet分布，则参数的后验分布也为Dilichlet分布
 - pLSA(概率隐语义分析)
     - 规律：相同主题的词经常出现在同一文档中，不同主题的词很少出现在同一文档中
-    - 模型假设： 整个语料共享K个主题，每个主题都有生成单词的概率分布，每个docement是K个主题的混合（混合比例固定）；
+    - 模型假设： 整个语料共享K个主题，每个主题都有生成单词的概率分布，每个docement是K个主题的混合（混合比例固定)
+        $$
+        p(word_v|D_i) = \sum_{t=1}^{K}p(topic_t|D_i)p(word_v|topic_t) \\= \sum_{t=1}^{K}\varphi_{i,t}\theta_{t,v}
+        $$
     - 求解方法：
         - 矩阵分解
+            > $p(word_v|D_i)$为观测变量，矩阵求解$\varphi_{i,t},\theta_{t,v}$
         - EM
+            1. 令m=0,为$\varphi_{i,t}^{<m>}$,${\theta_{t,v}^{<m>}}$赋初值;
+            2. 计算后验概率 $p(topic_t|D_i,word_v) =\frac{\varphi_{i,t}^{<m>}.\theta_{t,v}^{<m>}}{{\sum_{t=1}{K}\varphi_{i,t}^{<m>}.\theta_{t,v}^{<m>}}}$
+            3. 计算Q函数.... 
+            4. 最大化
+                (1).  $\varphi_{i,t}^{<m+1>} = \frac{\sum_{v=1}^{V}c(i,v)p(topic_t|D_i,word_v)}{n_i}$
+                    - 文档$D_i$中每个位置背后，数据主题$topic_t$的频数（以概率计算)除以总位置的的占比
+                (2). $\theta_{t,v}^{<m+1>} = \frac{\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}{\sum_{v=1}^{V}\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}$
+                    - 单词$word_v$在数据集$D$中属于$topic_t$的频率(按概率计算)与数据集中属于主题$topic_t$的总频率(按概率计算)
+                
 - LDA（隐Delichilet分析）
-    - 贝叶斯版本的pLSA(先验概率)
-    - documents i 的主题分布和主题单词分布假设服从dirichlet先验(dirichlet为多项式分布的共轭分布)
+    - pLSA中参数$\bm{\varphi}$,$\bm{\theta}$是常数, 而LDA 假设$\bm{\varphi}$,$\bm{\theta}$是随机变量, 具有先验分布
+    - 一篇文档的主题分布不再固定，主题的单词分布也不再固定
+    - $D_i$的主题分布和主题单词分布假设服从dirichlet先验(dirichlet为多项式分布的共轭分布)
     - 求解方法：
+        - 基本假设，同一篇文档中的相同单词来自同一主题
         - 变分推断
         - 吉布斯采样
 ## 2. 词向量
