@@ -1,4 +1,4 @@
-# 文本挖掘和NLP相关内容
+﻿# 文本挖掘和NLP相关内容
 ## 1.  主题模型（待补充...)
 1. 词在文档中不考虑顺序（BOW)
 2. 文档生成
@@ -215,7 +215,16 @@
         - 筛选训练数据， 剔除过长和过段的数据
         - 尝试bert+conv, bert+conv+avg_max_pooling,bert_last_layer_concat
         - 实际场景数据进行进一步预训练
-    
+
+            - unbias Adam
+            - re-initialize top-Layers
+            - longer iteration
+            - mixout: at each training iteratio,each model parameter is replaced with its pre-trained value with probability $p$
+            - weight-decay
+            - Layer-wise-learnign rate decay: higher learning rate for top layers and lower for bottom layers
+            - transferring via in intermediate task
+            
+            
     
 6. AIBERT
     - A light BERT
