@@ -4,9 +4,14 @@
 2. 文档生成
 - unigram-model
     - 单词独立生成
+    
     - 最大似然估计 
+        
         >$p(\theta_v) = \frac{n_v}{n}$, 数据集D中wordv出现的频次/数据集中单词的总个数n
+        
     - 最后后验估计: 参数的似然分布为多项分布，先验假设为Dilichlet分布，则参数的后验分布也为Dilichlet分布
+    
+    - 
 - pLSA(概率隐语义分析)
     - 规律：相同主题的词经常出现在同一文档中，不同主题的词很少出现在同一文档中
     - 模型假设： 整个语料共享K个主题，每个主题都有生成单词的概率分布，每个docement是K个主题的混合（混合比例固定)
@@ -15,6 +20,7 @@
         $$
     - 求解方法：
         - 矩阵分解
+            
             > $p(word_v|D_i)$为观测变量，矩阵求解$\varphi_{i,t},\theta_{t,v}$
         - EM
             1. 令m=0,为$\varphi_{i,t}^{<m>}$,${\theta_{t,v}^{<m>}}$赋初值;
@@ -25,7 +31,7 @@
                     - 文档$D_i$中每个位置背后，数据主题$topic_t$的频数（以概率计算)除以总位置的的占比
                 (2). $\theta_{t,v}^{<m+1>} = \frac{\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}{\sum_{v=1}^{V}\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}$
                     - 单词$word_v$在数据集$D$中属于$topic_t$的频率(按概率计算)与数据集中属于主题$topic_t$的总频率(按概率计算)
-                
+    
 - LDA（隐Delichilet分析）
     - pLSA中参数$\bm{\varphi}$,$\bm{\theta}$是常数, 而LDA 假设$\bm{\varphi}$,$\bm{\theta}$是随机变量, 具有先验分布
     - 一篇文档的主题分布不再固定，主题的单词分布也不再固定
@@ -64,6 +70,7 @@
     - 对数变换并加偏置项保持对称性
     - $log(X_{i,j}) = \vec{w}_i^T*\vec{w}_j + b_i + b_j $
     - 损失函数 $J=\sum_{i,j}^{N} f(X_{i,j})(\vec{w}_i^T*\vec{w}_j + b_i + b_j -log(X_{i,j}))^2$
+        
         >$f(X_{i,j})$为权重
 
 - fastText
@@ -106,7 +113,7 @@
             - multi-head的输出最后级联转换到输入一样的维度
             <!-- !['multi-head](./assets/qkv.PNG) -->
             - <img src="./assets/qkv.PNG" width = "80%" height = "100%" div align="center" />
-   
+
 
         - FFN
             - $\vec{O}_m=\mathbf{W_2}.Relu(\mathbf{W_1}\vec{v}_m+\vec{b_1}) + \vec{b_2}$
@@ -138,10 +145,12 @@
             >1. $\mathbb{\hat{h}}_\tau^{n-1}= stop\_gradient(\mathbb{h}_{\tau-1}^{n-1})||\mathbb{h}_\tau^{n-1}$  
             >2. $\mathbb{q}_\tau^n, \quad \mathbb{k}_\tau^n, \quad \mathbb{v}_\tau^n = \mathbb{h}_\tau^{n-1}\mathbf{W_q},\quad \mathbb{\hat{h}}_\tau^{n-1}\mathbf{W_k},\quad \mathbb{\hat{h}}_\tau^{n-1}\mathbf{W_v}$  
             >3. $\mathbb{h}_\tau^n = transformer\_layer(\mathbb{q}_\tau^n, \quad \mathbb{k}_\tau^n, \quad \mathbb{v}_\tau^n)$
+            
             - 最长的依赖长度$O(N \times L)$,N为层数，L为语句长度
-        - transformer-XL复用了上下文信息导致位置编码出现重叠，单词相对位置编码保证位置信息的正确性
-
+- transformer-XL复用了上下文信息导致位置编码出现重叠，单词相对位置编码保证位置信息的正确性
+        
     - 如何进一步改进：
+        
         - e.g., 缓存更长的上下文信息
 3. ELMO
     - embedding from langauge model
@@ -197,6 +206,7 @@
     - tokenization: wordPiece(递归组合相邻频繁项)
     - 后续模型的改进
         1. whole word mask(bert_wwm)： 在该版本中一个单词要么没有被 mask、要么该单词所有的 workpiece token 都被 mask 
+            
             > wordpiece可能导致的问题是可能只mask掉一个单词的piece，导致预测的只是单词的一部分，实际是一个错误的预测目标
         2. 动态mask机制(RoBERTa)，不在预处理阶段静态mask而后续一直采用该mask的训练，每次想模型输入时执行动态mask。
         3. 使用更长的序列训练(RoBERTa)
@@ -205,8 +215,8 @@
         - 筛选训练数据， 剔除过长和过段的数据
         - 尝试bert+conv, bert+conv+avg_max_pooling,bert_last_layer_concat
         - 实际场景数据进行进一步预训练
-        
-
+    
+    
 6. AIBERT
     - A light BERT
     - 优化点
@@ -235,6 +245,7 @@
     - 特点
         - permutation language model(PLM):  
             - 输入序列全排列的采样模拟上下文出现
+                
                 > $\mathbf{L} = E_{\vec{z}\lt \mathbb{Z}_T}\left[ \sum_{t=1}^{T} log p_{\Theta}(w_{z_t}|\mathbb{w}_{\vec{z}} \lt t)\right]$
             - 输入的顺序并没有变，通过改变attention的mask来实现
         - two-stream self attention
@@ -247,14 +258,18 @@
                 - query stream：编码了上下文和$w_t$的位置，通过可学习参数$\vec{w}_t$初始化,预测位置$w_t$是从query stream取$w_t$的查询向量，其余位置查询向量从context stream取；
                 - 两路self-attention共享参数
         - 引入transformer-XL
+            
             - 相对位置编码和segment-level递归？？？
         - 微调阶段
+            
             - 仅仅使用 content stream self-attention，并采用 Transformer-XL 的推断机制
     - partial-prediction
-        - PLM由于位置排列的各种组合导致收敛速度很慢，只预测序列的最后几个token加快速度
-    - 多输入：
-        - 对两个句子A,B输入拼接为[A,SEP,B,SEP,CLS]
-
+    
+         - PLM由于位置排列的各种组合导致收敛速度很慢，只预测序列的最后几个token加快速度
+     - 多输入：
+         
+         - 对两个句子A,B输入拼接为[A,SEP,B,SEP,CLS]
+     
 9. MT-DNN
     - 缓解监督学习数据太少的两种策略
         1. 预训练 (非监督方式，如ELMO, BERT等)
