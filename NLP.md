@@ -6,7 +6,7 @@
     - 单词独立生成
     
     - 最大似然估计 
-        
+      
         >$p(\theta_v) = \frac{n_v}{n}$, 数据集D中wordv出现的频次/数据集中单词的总个数n
         
     - 最后后验估计: 参数的似然分布为多项分布，先验假设为Dilichlet分布，则参数的后验分布也为Dilichlet分布
@@ -20,7 +20,7 @@
         $$
     - 求解方法：
         - 矩阵分解
-            
+          
             > $p(word_v|D_i)$为观测变量，矩阵求解$\varphi_{i,t},\theta_{t,v}$
         - EM
             1. 令m=0,为$\varphi_{i,t}^{<m>}$,${\theta_{t,v}^{<m>}}$赋初值;
@@ -30,10 +30,10 @@
                 (1).  $\varphi_{i,t}^{<m+1>} = \frac{\sum_{v=1}^{V}c(i,v)p(topic_t|D_i,word_v)}{n_i}$
                     - 文档$D_i$中每个位置背后，数据主题$topic_t$的频数（以概率计算)除以总位置的的占比
                 (2). $\theta_{t,v}^{<m+1>} = \frac{\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}{\sum_{v=1}^{V}\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}$
-                    - 单词$word_v$在数据集$D$中属于$topic_t$的频率(按概率计算)与数据集中属于主题$topic_t$的总频率(按概率计算)
+                        - 单词$word_v$在数据集$D$中属于$topic_t$的频率(按概率计算)与数据集中属于主题$topic_t$的总频率(按概率计算)
     
 - LDA（隐Delichilet分析）
-    - pLSA中参数$\bm{\varphi}$,$\bm{\theta}$是常数, 而LDA 假设$\bm{\varphi}$,$\bm{\theta}$是随机变量, 具有先验分布
+    - pLSA中参数$\mathbf{\varphi}$,$\mathbf{\theta}$是常数, 而LDA 假设$\mathbb{\varphi}$,$\mathbb{\theta}$是随机变量, 具有先验分布
     - 一篇文档的主题分布不再固定，主题的单词分布也不再固定
     - $D_i$的主题分布和主题单词分布假设服从dirichlet先验(dirichlet为多项式分布的共轭分布)
     - 求解方法：
@@ -43,7 +43,8 @@
 ## 2. 词向量
 - 概览
 ![分布式表示](./assets/distpresentation.PNG)
-1. 基于全局矩阵分解
+1. **基于全局矩阵分解**
+    
     - VSM(向量空间模型)
         - document-word 矩阵$\mathbf{W_{ij}}$，矩阵元素可以是单词是否出现（0，1）或者单词的统计特征tf-idf
         - 文档相似度： $sim(Di,Dj) = cos(\mathbb{w_i},\mathbb{w_j})$
@@ -52,8 +53,8 @@
         - document-word 矩阵进行SVD分解 $\mathbb{D}=\mathbf{P}\mathbf{\Sigma}\mathbf{Q^T}$
         - $\mathbf{P}$为文档-主题矩阵
         - $\mathbf{\Sigma}$为主题强度
-        - $\mathbf{Q^T}$为主题单词矩阵
-
+    - $\mathbf{Q^T}$为主题单词矩阵
+    
 2. 基于上下文Word2vec:
     - CBOW
         - 多个单词到一个（起到smoothing作用，善于预测出现次数多的单词)
@@ -63,14 +64,14 @@
 
 3. 基于全局矩阵(共现矩阵)+上下文
     - glove
-    - 所有语料中单词k出现在单词i上下文的占比/单词k出现在单词j上下文的占比 有一定的规律,词向量应该提箱相同的规律;
+    - 所有语料中单词k出现在单词i上下文的占比/单词k出现在单词j上下文的占比 有一定的规律,词向量应该体现相同的规律;
     - $F(\mathbb{\vec{w}_i},\mathbb{\vec{w}_j},\mathbb{\vec{w}_k}) = \frac{P_{i,k}}{P_{j,k}}$
-    -  $F(\mathbb{\vec{w}_i},\mathbb{\vec{w}_j},\mathbb{\vec{w}_k})$根据数学理论课设置为$e^{(\vec{w}_i-\vec{w}_j)*\vec{w}_k}$
+    -  $F(\mathbb{\vec{w}_i},\mathbb{\vec{w}_j},\mathbb{\vec{w}_k})$根据数学理论可设置为$e^{(\vec{w}_i-\vec{w}_j)*\vec{w}_k}$
     - $P_{i,k} = \frac{X_{i,k}}{X_{i}}$
     - 对数变换并加偏置项保持对称性
     - $log(X_{i,j}) = \vec{w}_i^T*\vec{w}_j + b_i + b_j $
-    - 损失函数 $J=\sum_{i,j}^{N} f(X_{i,j})(\vec{w}_i^T*\vec{w}_j + b_i + b_j -log(X_{i,j}))^2$
-        
+    - **损失函数** $J=\sum_{i,j}^{N} f(X_{i,j})(\vec{w}_i^T*\vec{w}_j + b_i + b_j -log(X_{i,j}))^2$
+      
         >$f(X_{i,j})$为权重
 
 - fastText
@@ -102,31 +103,44 @@
 ## 4. 预训练语言模型
 1. transform（attention is all your need):
     - 基于attention机制实现的特征提取，可代替CNN，RNN来提取序列特征，容易并行化
+
     - encoder-decoder
-         ![GPTv1](./assets/trm.jpg)
+         ![GPTv1](./assets/transformer.PNG)
+         
     - encoder的每层为两个子层：
         - multi-head self-attention
             - 能捕获双向关系$Attention(\mathbf{Q},\mathbf{K},\mathbf{V}) = softmax(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}})\mathbf{V}$
             - self-attention的输入输出维度一致（隐层维度）
-            - multi-head从不从表示空间提取序列特征
-            - 同一个head在不同层共享参数，有多少个head i的参数为$\mathbf{W}_q^i,\mathbf{W}_k^i,\mathbf{W}_v^i$  
+            - multi-head从不从表示空间提取序列特征($d_h=d_{model}//h$)
+            - 同一个head在不同层参数不同，有多少个head i的参数为$\mathbf{W}_q^i,\mathbf{W}_k^i,\mathbf{W}_v^i$  
             - multi-head的输出最后级联转换到输入一样的维度
             <!-- !['multi-head](./assets/qkv.PNG) -->
             - <img src="./assets/qkv.PNG" width = "80%" height = "100%" div align="center" />
 
-
-        - FFN
-            - $\vec{O}_m=\mathbf{W_2}.Relu(\mathbf{W_1}\vec{v}_m+\vec{b_1}) + \vec{b_2}$
-            - 输入输出维度一致
+    - FFN
+        - $\vec{O}_m=\mathbf{W_2}.Relu(\mathbf{W_1}\vec{v}_m+\vec{b_1}) + \vec{b_2}$
+        
+        - 输入输出维度一致
             - 同一层不同位置使用的参数相同
             - 不同层使用的参数不同
+        
         - 每个子层都使用残差连接(相加) + layerNorm(CHW)
+        
         - 每个子层的输入序列长度和输出序列长度一致,
+        
+            <img src="./assets/ffn.PNG" width = "80%" height = "100%" div align="center" />
+        
     - decoder每层有三个子层
+
         - mask-self attention 屏蔽序列后的单词，位置i的attention只依赖之前的结果
-            - 通过将softmax对应于mask位置的输入置为$-\infty$实现
-        - decoder encoder attention 捕获输出输出直接的关系，query 来自前一个 decoder 层的输出,key和value来自encoder
-        - FFN (和encoder类似)
+        - 通过将softmax对应于mask位置的输入置为$-\infty$实现
+
+    - decoder encoder attention 捕获输出输出直接的关系，query 来自前一个 decoder 层的输出,key和value来自encoder顶层编码器输出转换的K,V向量
+
+        - ![GPTv1](./assets/ende_atten.PNG)
+
+    - FFN (和encoder类似)
+
     - input
         - token embedding
         - position embedding： 因attention不能体现序列的位置关系，输入中加入position embedding
@@ -136,6 +150,15 @@
                 - 不同序列之间的embedding可以相互表示
             - 网络学习
             - 两种方式性能差别不大，但固定方式的 position embedding 可以在测试阶段处理那些超过训练序列长度的测试序列
+
+    - learning_rate
+
+        $lrate = d_{\text{model}}^{-0.5} \cdot
+          \min({step\_num}^{-0.5},
+            {step\_num} \cdot {warmup\_steps}^{-1.5})$ 
+        
+        http://nlp.seas.harvard.edu/2018/04/03/attention.html
+
 2. transformer-XL : attentive language model beyond a fix-length context
     - transformer 的问题：
         - transformer按固定长度切分语料只能提取固定长度的上下文
@@ -150,7 +173,7 @@
 - transformer-XL复用了上下文信息导致位置编码出现重叠，单词相对位置编码保证位置信息的正确性
         
     - 如何进一步改进：
-        
+      
         - e.g., 缓存更长的上下文信息
 3. ELMO
     - embedding from langauge model
@@ -206,7 +229,7 @@
     - tokenization: wordPiece(递归组合相邻频繁项)
     - 后续模型的改进
         1. whole word mask(bert_wwm)： 在该版本中一个单词要么没有被 mask、要么该单词所有的 workpiece token 都被 mask 
-            
+           
             > wordpiece可能导致的问题是可能只mask掉一个单词的piece，导致预测的只是单词的一部分，实际是一个错误的预测目标
         2. 动态mask机制(RoBERTa)，不在预处理阶段静态mask而后续一直采用该mask的训练，每次想模型输入时执行动态mask。
         3. 使用更长的序列训练(RoBERTa)
@@ -254,7 +277,7 @@
     - 特点
         - permutation language model(PLM):  
             - 输入序列全排列的采样模拟上下文出现
-                
+              
                 > $\mathbf{L} = E_{\vec{z}\lt \mathbb{Z}_T}\left[ \sum_{t=1}^{T} log p_{\Theta}(w_{z_t}|\mathbb{w}_{\vec{z}} \lt t)\right]$
             - 输入的顺序并没有变，通过改变attention的mask来实现
         - two-stream self attention
@@ -267,18 +290,18 @@
                 - query stream：编码了上下文和$w_t$的位置，通过可学习参数$\vec{w}_t$初始化,预测位置$w_t$是从query stream取$w_t$的查询向量，其余位置查询向量从context stream取；
                 - 两路self-attention共享参数
         - 引入transformer-XL
-            
+          
             - 相对位置编码和segment-level递归？？？
         - 微调阶段
-            
+          
             - 仅仅使用 content stream self-attention，并采用 Transformer-XL 的推断机制
     - partial-prediction
     
          - PLM由于位置排列的各种组合导致收敛速度很慢，只预测序列的最后几个token加快速度
      - 多输入：
-         
+       
          - 对两个句子A,B输入拼接为[A,SEP,B,SEP,CLS]
-     
+    
 9. MT-DNN
     - 缓解监督学习数据太少的两种策略
         1. 预训练 (非监督方式，如ELMO, BERT等)
