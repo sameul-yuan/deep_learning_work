@@ -314,6 +314,12 @@
     - sparse prior(bayesian compression): 各种先验
     - sparse matrix factrorization (ALBERT)
     - knowledge distillation(tinyBERT)
+    
+    
+11. transformer 的变种(https:/arxiv.org/pdf/2009.06732)
+    - 集中在low rank kernel/ fixed random pattern/ learnable pattern/ memory/ recurrence
+    
+
 
 
 
