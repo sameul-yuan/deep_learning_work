@@ -134,6 +134,8 @@
 
         - mask-self attention 屏蔽序列后的单词，位置i的attention只依赖之前的结果
         - 通过将softmax对应于mask位置的输入置为$-\infty$实现
+        - self-attention层 需要考虑causal mask + pad_mask
+        - cross-attention层 需要靠 pad_mask
 
     - decoder encoder attention 捕获输出输出直接的关系，query 来自前一个 decoder 层的输出,key和value来自encoder顶层编码器输出转换的K,V向量
 
