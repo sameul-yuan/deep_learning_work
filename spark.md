@@ -79,8 +79,10 @@ sbt build.bst
 # 3、常见的创建、转化、行动操作
 ### 3.1 两种创建方式
 - 读取外部数据集
+  	
   	>lines = sc.textFile('xxx.md')
 - 分发程序中的对象集合
+  	
   	>lines = sc.parallelize([1,2,3,4])   #需要将整个数据放到内存中
 ### 3.2、支持所有类型RDD的转化操作
 - `.map(f, preserverPartitioning=False)`: 将f运用在当前RDD的每个元素，构成新的RDD；preserverPartioning=True则新RDD保留旧RDD的分区。
@@ -167,7 +169,7 @@ sbt build.bst
 	def f(iterator):
 		for x in iterator:
 			print(x)
-    ```
+  ```
 ### 3.3、不同类型RDD的转换
 - scala中是隐式类型转换
 ### 3.4、持久化操作
@@ -194,9 +196,11 @@ sbt build.bst
 - spark为pair RDD提供了各种并行操作各个键、跨节点重新进行数据分组的接口
 ### 4.2、pairRDD创建
 - 对常规RDD执行转化操作
+	
 	>rdd.map(x=>(x.split('')(0), x))
 - 键值对格式读取时
 - 分发程序中的二元组数据集合
+	
 	>rdd = sc.parallelize([('a',1),('b',2)])
 
 ### 4.3、pairRDD的转化操作
@@ -215,6 +219,7 @@ sbt build.bst
 		x1=x.flatMapValues(lambda t:t).collect() 
 		# x1: [('a', 'x'), ('a', 'y'), ('a', 'z'), ('b', 'p'), ('b', 'r')]
 		x2=x.mapValues(lambda t:t).collect()
+		
 		# x2: [("a", ["x", "y", "z"]), ("b", ["p", "r"])]
 - `.sortByKey(ascending=True,numPartitions=None, keyFunc=<xx>)`:根据键进行排序
 - `.sampleByKey(replace, frac, seed=None)`:基于键的采样（分层采样）
@@ -251,8 +256,9 @@ sbt build.bst
 			z= rdd2.mapValues(lambda v: v[1]/v[0]) #rdd2是(k,C)的格式
 			z.persist()
 			print(z.collect())
-			# z: [('a', 2.0), ('b', 4.5), ('c', 6.0)]
-
+			
+		# z: [('a', 2.0), ('b', 4.5), ('c', 6.0)]
+	
 - 基于键的分组操作
 	- `.groupByKey(numPartitions=None, partitionFunc=<>)`: 根据键进行分组，返回类型为[K, iterable(V)]的RDD，K为原来RDD的键， V为原来RDD的值
 		- 分组是为了聚合，则直接使用聚合操作更好
@@ -306,6 +312,7 @@ sbt build.bst
 ### 5.1、spark中的两种共享变量（驱动器和工作节点之间的共享)
 - 1.**累加器**:
 	- 诞生原因
+		
 		- spark在集群中执行代码时会分解每个RDD操作到executor的task中，在此之前会计算每个task的闭包（执行RDD计算时executor需要访问的变量和方法集合），并将闭包的**副本**序列化发送到每个executor。因此在excutor中操作的比如计数器是executor本地的和驱动器中并无直接关系
 	- 功能及实现
 		- 将工作节点中的值聚合到驱动程序，只支持累加(+=)操作
@@ -323,12 +330,12 @@ sbt build.bst
 			  if cond:
 			    acc+=1
 			  return xx
-			rdd=file.map(xxx)
-
+		rdd=file.map(xxx)
+	
 	- 容错功能
 		- 行动操作中的累计器，spark确保每个task对累加器修改只应用一次，因此task失败和重新计算时此时的累加器也可靠
-		- 转化操作中使用的累加器可能发生不止一次更新，无法保证可靠
-
+	- 转化操作中使用的累加器可能发生不止一次更新，无法保证可靠
+	
 - 2.**广播变量**
 	- 运行程序高效的向工作节点发送只读值
 	- `broacast` 变量的`value`中存放着广播的值，该值只会发送到各节点一次
@@ -349,7 +356,7 @@ sbt build.bst
 			rdd=rdd.map(func)
 	- 广播的优化
 	 	- 选择良好的序列化格式，通过`spark.serializer`属性选择序列化库
-	 	
+	
 # 6、数据读取和存储
 支持多种输入输出源,特别是Hadoop MapReduce使用的InputFormat和OutputFormat接口访问数据
 ，常见数据源：
@@ -417,14 +424,15 @@ sbt build.bst
 	- `.builder`
 	- `.conf`: 配置接口
 	- `.catalog`: 用户通过它操作底层的数据库，表和函数的接口
+		
 		>spark_session.catalog.cacheTable('name') #缓存表
 	- `.sparkContext`:返回底层的sparkContext
 	- 数据读取接口：
 		- `.read`： 返回一个DataFrameReader, 从外部存储系统读取数据并返回DataFrame
 		-  `.readStream`:返回一个DataStreamReader，将输入数据流读取为DataFrame
 		- `.streams`: 返回一个StreamingQueryManager对象，管理当前上下文所有的StreamingQuery
-	- `.version`: spark版本
-
+- `.version`: spark版本
+	
 4. SparkSession方法
 	- `.createDataFrame(data,schema=None,samplingRatio=None, verifySchema=True)`:从`RDD`、`一个列表`或者`pandas.DataFrame`中创建一个DataFrame
 		- schema: DataFrame的结构化信息，可以为：
@@ -570,6 +578,7 @@ sbt build.bst
 				df.orderBy(df.age.desc())
 				df.orderBy("age", ascending=False)
 				df.orderBy(asc("age"))
+			
 			- `.sortWithinPartitions(*cols, *kw)`:返回一个新的DataFrame，它根据旧的DataFrame 指定列在每个分区进行排序
 		- 调整分区
 			- `.coalesce(numPartitions)`:返回拥有指定的numPartitions 分区的新DataFrame
@@ -619,6 +628,7 @@ sbt build.bst
 				- `fractions`：一个字典，给出了每个值分层抽样的比例。如果某层未指定，则其比例视作 0
 				>
 					sampled = df.sampleBy("key", fractions={0: 0.1, 1: 0.2}, seed=0)
+					
 					# df['key'] 这一列作为分层依据，0 抽取 10%， 1 抽取 20%
 		- 替换
 			- `.replace(to_replace, value=None, subset=None)`：返回一组新的DataFrame，它是旧DataFrame 的数值替代结果
@@ -641,6 +651,7 @@ sbt build.bst
 				- `expr`：一组SQL 的字符串描述
 				> df.selectExpr("age * 2", "abs(age)")
 			- `.toDF(*cols)`: 选取指定的列组成一个新的DataFrame
+				
 				- `cols`：列名字符串的列表
 			- `.toJSON(use_unicode=True)`: 返回一个新的DataFrame，它将旧的DataFrame 转换为RDD（元素为字符串），其中每一行转换为json 字符串。
 		- 列操作
@@ -679,6 +690,7 @@ sbt build.bst
 				    for person in people:
 				        print(person.name)
 				df.foreachPartition(f)
+			
 			- `.toPandas()`：将DataFrame 作为`pandas.DataFrame` 返回
 	3. **其他方法**
 		- 缓存
@@ -696,13 +708,14 @@ sbt build.bst
 		- `.createOrReplaceTempView(name)`：创建一个临时视图，name 为视图名字。如果该视图已存在，则替换它。
 		- `.createGlobalTempView(name)`：创建一个全局临时视图，name 为视图名字
 			- spark sql 中的临时视图是`session` 级别的，会随着session 的消失而消失。如果希望一个临时视图跨session 而存在，则可以建立一个全局临时视图
-			- 全局临时视图存在于系统数据库`global_temp` 中，必须加上库名取引用它
+		- 全局临时视图存在于系统数据库`global_temp` 中，必须加上库名取引用它
 			>
 				df.createGlobalTempView("people")
 				spark_session.sql("SELECT * FROM global_temp.people").show()
-
+	
 		- `.createOrReplaceGlobalTempView(name)`：创建一个全局临时视图，name 为视图名字。如果该视图已存在，则替换它
 		- `.explain(extended=False)`：打印`logical plan` 和`physical plan`，用于调试模式
+			
 			- `extended`：如果为False，则仅仅打印`physical plan`
 
 
@@ -714,6 +727,7 @@ sbt build.bst
 	- 通过字典的方式：`row[key]`
 3. `key in row` 将在`Row` 的键上遍历（而不是值上遍历）
 4. 创建`Row`：通过关键字参数来创建
+	
 	>row = Row(name="Alice", age=11)
 5. 可以创建一个`Row` 作为一个类来使用，它的作用随后用于创建具体的`Row`
 	>
@@ -740,6 +754,7 @@ sbt build.bst
 			df.select(df.age.alias("age2"))
 			# 结果为： [Row(age2=2), Row(age2=5)]
 			df.select(df.age.alias("age3",metadata={'max': 99})).schema['age3'].metadata['max']
+			
 			# 结果为： 99
 	- 排序
 		- `.asc()`:创建一个新列，它是旧列的升序排序的结果
@@ -772,11 +787,13 @@ sbt build.bst
 				df[df.name.isin("Bob", "Mike")]
 				df[df.age.isin([1, 2, 3])]
 		- `.like(other)`：返回一个新列，是布尔值。表示旧列的值是否like other。它执行的是SQL 的 like 语义
+			
 			>df.filter(df.name.like('Al%'))
 		- `.rlike(other)`：返回一个新列，是布尔值。表示旧列的值是否rrlike other。它执行的是SQL 的 rlike 语义
 	- 字符串操作（`other` 为一个字符串）
 		- `.contains(other)`：返回一个新列，是布尔值。表示是否包含other
 		- `.endswith(other)`：返回一个新列，是布尔值。表示是否以other 结尾
+			
 			>df.filter(df.name.endswith('ice'))
 		- `.startswith(other)`：返回一个新列，是布尔值。表示是否以other 开头
 		- `.substr(startPos, length)`：返回一个新列，它是旧列的子串
@@ -789,6 +806,7 @@ sbt build.bst
 			>
 				from pyspark.sql import functions as F
 				df.select(df.name, F.when(df.age > 4, 1).when(df.age < 3, -1).otherwise(0))
+			
 			- `.otherwise(value)`：value 为一个字面量值，或者一个Column 表达式
 	
 
@@ -816,6 +834,7 @@ sbt build.bst
 		>
 			df4.groupBy("year").pivot("course", ["dotNET", "Java"]).sum("earnings")
 			#结果为：[Row(year=2012, dotNET=15000, Java=20000), Row(year=2013, dotNET=48000, Java=30000)]
+			
 			# "dotNET", "Java" 是 course 字段的值
 
 ### 7.8. 内建的[functions][2]
@@ -834,7 +853,27 @@ pyspark.sql.functions，包含了常见是数学计算和字符串函数
 	- 调度stats()一次性得出或分别各自调用得出
 	- `count()， mean(),  sum(), min(),max(), variance(), sampleVariance(), stdev(), sampleStdev()`
 
+# 9. 分区数确定和调优
+
+ hash分区支持只（key,val)类型，val类型默认为range分区
+
+1. 重要参数：
+   - spark.default.parallelism： 决定了每个stage的默认task个数（一个分区会启动一个task）， 只对RDD类型有效， sc.parallelize()的输出分区也是这个，一般设置为excutor*cores的2-3倍；对spark.sql无效；
+   - spark.sql.shuffle.partitions:  spark sql语句的select语法中包含shuffle，join等语法时生成的df默认分区数；
+   -  spark.sql.files.maxPartitionBytes ：spark.sql每个分区的最大bytes，默认128M
+2.  读入数据时的分区数
+   - paralleize()：读取取决于spark.default.parallelism参数
+   - textFile()  ：读取取决于max(文件分块数,2) --yarn模式
+   - hdfs文件：读取 取决于inputSlit的的个数，二inputsplit根据文件最小存储单位block合并而来，inputSplit与Task是一一对应的关系,每个Task执行的结果就是生成了目标RDD的一个partiton; 一般读取后需要repartition进行调优；
+   - spark.sql()：读取也是hdfs文件，如果没有shuffle类操作，也由inputsplit确定，否则根据spark.sql.shuffle.patitions确定；
+3.  转换、行动操作的分区数确定
+   - 在Map阶段partition数目保持不变
+   - 在Reduce阶段，RDD的聚合会触发shuffle操作，聚合后的RDD的partition数目跟具体操作有关，例如repartition操作会聚合成指定分区数，还有一些算子是可配置的；
+   - RDD在计算的时候，每个分区都会起一个task，所以**rdd的分区数目决定了总的task数目**
+
 [GitHub](https://github.com/sameul-yuan 'myself')
-   
+
+
+
 [1]:http://spark.apcahe.org/docs/latest/api/scala/index.html#packages "包文档"
 [2]:http://huaxiaozhuan.com/%E5%B7%A5%E5%85%B7/spark/chapters/03_dataframe.html
