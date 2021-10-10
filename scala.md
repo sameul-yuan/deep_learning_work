@@ -21,7 +21,7 @@
 - scala每行语句的后面会自动补全分号；
 
 - if/else 结构的值是之后表达式的值： 
-    
+  
     >var r = if(x>0) 0 else 1
     
 - {} 块表达式最后一个表达式的值就是块返回值,最后一个表达式是语句并没有返回值则返回Unit, 如果函数体中if语句返回需要显示的return 语句；
@@ -58,6 +58,7 @@
     
 ### 1.2 类和对象
 - 当new类时，类中除了方法不执行(构造方法执行)其他都执行
+
 - Scala程序必须从一个对象的main方法开始
     ```scala 
     object Main {
@@ -68,7 +69,8 @@
         println()
     }
     ```
-- object相当于java中的单例，定义的都的静态的，没有括号传参,可以实现apply方法实现调用时传参,高效地共享单个不可变实例; Array，List, Vector等都是object.
+    
+- object相当于java中的单例，定义的都的静态的，没有括号传参,可以实现apply方法实现调用时传参,高效地共享单个不可变实例;   Array，List, Vector等都是object；  不能new, 定义类时同时创建了唯一的对象，就是本身；
     ```scala
     object Lesson{ 
         def main(args:Array[String]):Unit={
@@ -76,12 +78,13 @@
             Lession(10) #调用apply
         }
     
-        def apply(x:Int):Unit={  #除非定义了apply方法（传参时执行apply方法）
+        def apply(x:Int):Unit={  #除非定义了apply方法（传参时执行apply方法，也称工厂方法,可以创建其他对象）
             println("apply called")
         }
     }
     ```
-- class 可以传参（scala特有）,传参时需要制定类型便于类中自动类型推断，有了参数就有默认的构造，类中属性默认有getter和setter方法，对于属性age, getter和setter方法分别为 def age(){} def age_={}
+    
+- class 可以传参（scala特有）,传参时需要指定类型便于类中自动类型推断，有了参数就有默认的构造，类中属性默认有getter和setter方法，对于属性age, getter和setter方法分别为 def age(){} def age_={}
     ```scala
     class Person( xname:String,xage:Int){ # xname,xage只有Person可见，如果是Person(val/var xname:String ,xage:Int) 则xname在类外可访问
         val name = xname        #默认public访问级别
@@ -91,21 +94,38 @@
             println("hello world")
         }
         def this(xname:String, xage:Int, xgender:Char){
-            this(xname, xage)    # 重写构造时，第一行必须先调用默认构造器(按照类参数列表和类体产生)或其他辅助构造器
+            this(xname, xage)    # 重写构造时，第一行必须先调用默认(主)构造器(按照类参数列表和类体产生)或其他辅助构造器
             this.gender = gender 
         }
     }
     ```
-- 如果是object Person,则class Person类是该object Person对象的伴生类，该Person对象是Person类的伴生对象，可以互相访问私有变量；
+    
+- 如果是object Person,则class Person类是该object Person对象的伴生类，该Person对象是Person类的伴生对象，可以互相访问私有变量；而且伴生类的多个对象共享伴生对象创建的变量
+
+    ```scala
+    class Person{  //伴生类
+        def increment()={Person.X += 1; Person.X}  //Person.X 对伴生对象的访问
+    }
+    object Person{ //伴生对象
+        var X:Int = 0  //共享该值
+    }
+    
+    p1 = new Person()
+    p2 = new Person()
+    p1.increment() // 1
+    p2.increment() // 2
+    ```
+
+    
 
 - Trait,相当于Java中接口和抽象类结合
     - 可以在Trait中定义方法实现或不实现，var/val都可以，未实现的方法就想抽象的
-    - 不可以传参
+    - 不可以传参（抽象类可以传参）
     - 类继承Trait 第一个关键字是extends，之后用with
         ```scala
         class A extends trait1 with traint2{} # with实现多个特质，后面的特质先执行
         ```
-    - 继承类中需要实现没实现的方法
+    - 继承类中需要实现没实现的方法，否则强制为abstract 类
 
 - 类继承
     ```scala
@@ -114,6 +134,9 @@
     abstract class  A #定义抽象类，不能实例化
     def sum:Int  #抽象方式省去了方法体，子类中重写抽象字段、方法时不需要override
     val att:Int # 抽象字段没有初始值的字段
+    
+    class A(arg1, arg2,arg3) extends B(arg1,arg2){}//基类有构造器参数则必须显示提供,arg1,arg2为传给基类构造器的参数
+    // A的重载构造器必须调用其他构造器，不能调用基类构造器， 只有A的主构造器是调用基类构造器的唯一门户（自动实现)
     ```
 
 
@@ -145,23 +168,26 @@
         def fun {println(3)} # 不带参数的过程,方法体需要加{}
         ```
     
-        
 2. 递归方法
-    
+   
     - 显示声明返回类型
+    
 3. 参数可以有默认值
     ```scala
     def fun(x:Int=100):Unit={}
     ```
+    
 4. 可变长参数
     ```scala
     def sum(args: Int*)={ for (arg<-args) result+=arg} 
     def sum(args: Int*)={args.foreach(ele=>{println(ele)}} 
     ```
+    
 4. 参数序列（Python中的*)
     ```scala
     sum(1 to 5:_*) #使用_*将区间转成参数序列
     ```
+    
 6. 匿名函数
     - `()=>{}`
 
@@ -185,21 +211,42 @@
         Array(1,2,3).map(x=>3*x) #只有一个参数x，可省略()
         Array(1,2,3).map(3*_) #参数在=>右侧只出现一次可用_代替
         ```
-6. 偏应用函数
+    
+7. 偏应用函数
     ```scala
     def fun: String=>Unit=showLog(2020,_:String) # fun('a') = showLog(2020,'a')
     ```
 
-7. 嵌套方法
-8. 高阶函数
+8. 偏函数
+
+  - def fun:PartionlFunction[String,int]={case ...}
+
+   - PartionlFunction[匹配类型，返回类型]
+
+   - java中的switch case
+
+   - 不能带括号传参，只能匹配一个值返回一个值，如下匹配string返回int
+
+     ```scala
+     def MyTest:PartionlFunction[String,Int]={
+     case "abc"=>2
+     case "a"=>1
+     case _=>100
+     }
+     ```
+
+8. 嵌套方法
+
+9. 高阶函数
     - 参数是函数
-        
+      
         > def fun(f:(int,int)=>Int, s:String):Unit={...}
     - 返回类型是函数，显示的指示函数的返回是函数(在返回的函数后面加 _ 可以不用指明）
         > def fun(s1:String,s2:String):(string,string)=>String={...}
         > val f = fun _  #将函数赋给变量，_表示方法代表的这个函数
     - 参数和返回都是函数 
-9. 柯里化函数
+
+10. 柯里化函数
     - 高阶函数的简化（返回值类型是函数)
     ```scala
     def fun(a:Int,b:Int)(c:Int,d:Int):Int={
@@ -328,14 +375,23 @@
         ::从给定的头尾创建列表， ::是右结合类别将从末端开始构建
     
 - s.map(fun) 
+    
     - s.flatMap(fun) 展平映射  (spark中rdd调用的map，flatMap就是scala中的实现)
     
 - s.reduceLeft/Right(op)
     - s.foldLeft(init)(op) 提供了额外初始值的reduce
+    
     - s.scanLeft/Right(op) 产生中间结果和最后的结果
+    
     - print(List(1,2,4).reduceLeft(_ + _) #每个元素只出现一次时用`_`代替
-    - a zip b
+    
+    - a zip b  //a.zip(b)
+    
     - a.zipAll(b,default_a, defualt_b)
+    
+    - a.zipWithIndex
+    
+      
 
 ### 1.6 模式匹配
 - match ... case ...
@@ -386,12 +442,12 @@
     case (x,0)  #以0结尾的两个元素元祖
     ```
 
-### 1.7 样例类
+### 1.7 case 样例类
 - case class, 类似python的dataclass /命名元祖
 - 可new 可不new
 - 参数默认有getter、setter方法，参数类型默认为val,类外可访问
 - 重写了equals,toString,hashCode等方法 
-- 自动生成一个伴生对象，该伴生对象自动生成apply,unapply模板代码
+- 自动创建一个object伴生对象，该伴生对象包含apply,unapply方法
 - 用于模式匹配和值存储(可以new，可以不new)
     ```scala
     abstract class Amount
@@ -401,23 +457,41 @@
     case Dollar(v)=>'$‘+v
     case Currentcy(v)=>'RMB'+v
     }
-    ```
-
-### 1.8 偏函数
-- def fun:PartionlFunction[String,int]={case ...}
-- PartionlFunction[匹配类型，返回类型]
-- java中的switch case
-- 不能带括号传参，只能匹配一个值返回一个值，如下匹配string返回int
-    ```scala
-    def MyTest:PartionlFunction[String,Int]={
-    case "abc"=>2
-    case "a"=>1
-    case _=>100
+    
+    case class Dollar(value:Double)
+    object Dollar{   # 自动创建的伴生对象
+        def apply(value:Double)= new Dollar(value)
     }
+    val dollar = Dollar(12.0) //不new，实际调用的伴生对象
+    val dollar2 = new Dollar(12.0) //new, 调用的class
     ```
 
 ### 1.8 sealed和Option
 - sealed class 密闭类，子类的种类有限（超类申明为sealed,子类和超类定义在一个文件)
+
+    ```scala
+    #可作为Enumrator的替代
+    sealed trait Color // 声明color为密闭类 所有子类必须在同一个源文件,本身成员变量和方法
+    case object Red extends Color  //case 对象
+    case object Green extends Color
+    case object Blue extends Color
+    
+    object Colors {
+        val values = Vector(Red,Green,Blue)
+    }
+    
+    def display(c:Color)={
+        c match {
+            case Red => s"it is $c"
+            case Blue => s"it is $c"
+            case Green=> s"it is $c"
+        }
+    }
+    Colors.values.map(display)
+    ```
+
+    
+
 - Option 类：表示可能存在也可能不存在的值
     ```scala
     val value:Option[String] = map.get(key) #key存在时value有值否者value为None
@@ -425,6 +499,11 @@
     case Some(v) =>v  #用Some包裹存在的值
     case None =>'?'   #用None表示不存在值
     }
+    
+    //向现有类中添加新参数
+    case class A(a:String, b:String, c:Option[String]=None)
+    val a = class A("a","b")
+    val b = class A("a","b",Option("c"))
     ```
 
 ### 1.9 隐式类型转换
@@ -470,11 +549,11 @@
 1. 包的导入
 
    - import packagename.ClassName
-
-   - import util.Random
+- import util.Random
    - import util.{Random, Property}  // type newName = Random 为Random取第二个名字
-   - import util.{Random=>Bob, Property=>Alice} 为包取别名 
-   - import util._  # _导入包下的所有内容 
+   - import util.{Random=>Bob, Property=>Alice}  为包取别名 
+   - import util._    //_导入包下的所有内容 
+   - import java.util.Date // 可以直接导入java包
 
 2.  包的创建
 
@@ -494,4 +573,29 @@
    ```
 
    3.  CLASSPATH 中添加编译包的路径
+
+### 1.12 异常
+
+```scala
+class Problem(val msg:String) extends Exception
+
+def f(n)={
+    if (n==0){
+        throw new Problem('input is zero')
+    }
+    else{
+        n/12
+    }
+}
+
+def test(n:Int)={
+    try{ 
+        f(n)
+    }
+    catch{
+        case e:Problem=>s" Failed $e.msg"
+        case _=>"unkown error"
+    }
+}
+```
 
