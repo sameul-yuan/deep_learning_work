@@ -257,7 +257,7 @@ sbt build.bst
 			z.persist()
 			print(z.collect())
 			
-		# z: [('a', 2.0), ('b', 4.5), ('c', 6.0)]
+			# z: [('a', 2.0), ('b', 4.5), ('c', 6.0)]
 	
 - 基于键的分组操作
 	- `.groupByKey(numPartitions=None, partitionFunc=<>)`: 根据键进行分组，返回类型为[K, iterable(V)]的RDD，K为原来RDD的键， V为原来RDD的值
