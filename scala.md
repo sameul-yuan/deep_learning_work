@@ -12,25 +12,48 @@
 - var a=1  可变变量，
 - val a:Int = 1 变量类型为Int，变量和函数的返回类型写在后面 val name:type
 - Byte,Char,Short, Int, Long,Float, Double, Boolean, BigInt, BigDecimal,String
-- Null(具有唯一实例null)，None（Option的子类，另一个是Some)，Any(Scala中基础基类），AnyRef，Unit(其他语言的void), Nothing(推断不出的类型),Nil(0个元素的List)
+- Null(具有唯一实例null)，None（Option的子类，另一个是Some)，Any(Scala中基础基类），AnyRef，Unit(其他语言的void, 没有返回结果的类型), Nothing(推断不出的类型),Nil(0个元素的List)
 - +-*/%  to/until等操作符实际上是方法; val a = 1 to 10 , val a = 1.to(10)
-- val result = for( i<- 1 to 1000 if(i<500) if (i%2==0)) yield i 
+- val result = for( i<- 1 to 1000 if(i<500) if (i%2==0)) yield i  推导
+- 字符串插值 s"this is ${}"  ， 类似python的f-string
 
 ### 1.1 控制结构
 - scala每行语句的后面会自动补全分号；
+
 - if/else 结构的值是之后表达式的值： 
+    
     >var r = if(x>0) 0 else 1
-- {} 块表达式最后一个表达式的值就是块返回值
+    
+- {} 块表达式最后一个表达式的值就是块返回值,最后一个表达式是语句并没有返回值则返回Unit, 如果函数体中if语句返回需要显示的return 语句；
+
+    > val c = { val a=2;  val b=2; a*b}   // c=4
+    >
+    > val c= { val a=2
+    >
+    > ​             val b=2
+    >
+    > ​              if (a>2 && b==2) { a+1} else {a}
+    >
+    > ​            }
 
 - while(n>1) ...; 
+
 - do .... while ...
+
 - for 
     ```scala
+    //推导：将生成器、条件过滤和定义组合在一起 ;() 或{}
     for(i<- 1 to n)  包含n
     for(i<- 1.to(10))
     for(i <- 1 until n) 不包含n
+    for(i <- Range(0,n)) 不包含n for(i<-Range(0,n).inclusive)
     for(i<- 1 to n; j<- 1 to n) 用;分隔多个生成器
-    for(i<1 1 to n if i%2==0; j<- 1 to n) 每个生成器可以带一个或多个if的守卫
+    for(i<- 1 to n if i%2==0; j<- 1 to n if j%2==0 if j>3) 每个生成器可以带一个或多个if的守卫
+    
+    val vec = Vector(1,2,3,4) //Vector[int](1,2,3,4)
+    val result = for{i<-vec if i>2} yield i //result的类型会自动从vec中推断出来
+    val result = for(i<-vec if i%2==1) yield {val v=i+1; v+1} //yield可以与表达式结合并且 yield可以嵌套
+    
     ```
     
 ### 1.2 类和对象
@@ -45,14 +68,14 @@
         println()
     }
     ```
-- object相当于java中的单例，定义的都的静态的，没有括号传参,可以实现apply方法实现调用时传参,，高效地共享单个不可变实例; Array，List等都是object.
+- object相当于java中的单例，定义的都的静态的，没有括号传参,可以实现apply方法实现调用时传参,高效地共享单个不可变实例; Array，List, Vector等都是object.
     ```scala
     object Lesson{ 
         def main(args:Array[String]):Unit={
             val p = New Person('zhangshan',20,'M') #scala中new class时，类中除了方法不执行，其他都执行
             Lession(10) #调用apply
         }
-  
+    
         def apply(x:Int):Unit={  #除非定义了apply方法（传参时执行apply方法）
             println("apply called")
         }
@@ -68,12 +91,12 @@
             println("hello world")
         }
         def this(xname:String, xage:Int, xgender:Char){
-            this(xname, xage)    # 重写构造时，第一行必须先调用默认构造函数
+            this(xname, xage)    # 重写构造时，第一行必须先调用默认构造器(按照类参数列表和类体产生)或其他辅助构造器
             this.gender = gender 
         }
     }
     ```
-- 如果是object Person,则class Person类是该object Person对象的伴生类，该Person对象的Person类是伴生对象，可以互相访问私有变量；
+- 如果是object Person,则class Person类是该object Person对象的伴生类，该Person对象是Person类的伴生对象，可以互相访问私有变量；
 
 - Trait,相当于Java中接口和抽象类结合
     - 可以在Trait中定义方法实现或不实现，var/val都可以，未实现的方法就想抽象的
@@ -96,17 +119,35 @@
 
 ### 1.3 方法和函数
 1. 方法的定义
-    - def func
+    - def func(arg1: type1, arg2:type2):returnType={ line  of code ; return_val} //方法体是表达式
+    
     - 方法中传参需要指定类型
+    
     - 如果没写return返回值，方法可以自动推断返回类型，模型将最后一行计算的结果当做返回值
+    
     - 如果要写return返回值，需显示的声明返回类型
-    - 如果方法体可以一行搞定，方法体的{}可省略
+    
+    - 如果方法体可以一行搞定，方法体的{}可省略（方法体是表达式)
         ```scala
         def abs(x:Double=10):Int = if (x>=0) x else -x  
         ```
-    - 如果方法名和方法体直接没有= 则为过程，返回Unit 
+        
+    - 如果方法名和方法体之间没有= 则为过程，返回Unit 
+    
+        ```scala
+        def print(args:Int*) {for(i<- args) println(i)}
+        ```
+    
     - 不带参数的Scala方法通常不使用圆括号，一般没有参数且不改变当前对象的方法不带圆括号
+    
+        ```scala
+        def fun = 3  # 不带参数(调用时不需要括号); 自动推断返回类型为Int;只有一行方法体不需要{} 的方法； 
+        def fun {println(3)} # 不带参数的过程,方法体需要加{}
+        ```
+    
+        
 2. 递归方法
+    
     - 显示声明返回类型
 3. 参数可以有默认值
     ```scala
@@ -121,13 +162,20 @@
     ```scala
     sum(1 to 5:_*) #使用_*将区间转成参数序列
     ```
-5. 匿名函数
+6. 匿名函数
     - `()=>{}`
+
+        ```scala
+        n=>3 //只有一个参数且可推断出返回类型可去掉(), 表达式只有一行可去掉{}
+        ```
+
     - 可以赋值给一个变量，供调用
         ```scala
-        var fun：String=>Unit = (a:String)=>{println(a)}
+        //函数表里的声明 funame: (arg1Type,arg2Type,..)=>returnType
+        var fun：String=>Unit = (a:String)=>{println(a)} // 只有一个参数声明的()可去掉
         def fun: (int, int)=>int=(a:Int,b:Int)=>{a+b}
         ```
+        
     - 常见用法
         ```scala
         (x:Double)=> 3*x  #匿名函数
@@ -145,6 +193,7 @@
 7. 嵌套方法
 8. 高阶函数
     - 参数是函数
+        
         > def fun(f:(int,int)=>Int, s:String):Unit={...}
     - 返回类型是函数，显示的指示函数的返回是函数(在返回的函数后面加 _ 可以不用指明）
         > def fun(s1:String,s2:String):(string,string)=>String={...}
@@ -270,19 +319,18 @@
         1. 序列：如数组、列表可通过下标索引
         2. set：如Set无须的， LinkedHashSet 保留插入顺序，SortedSet排序的
         3. map: 如Map， SortedMap按键排序
-        >
-            +将元素添加到无序的Set
+        >+将元素添加到无序的Set
             +：和:+分别将元素前向和后向添加到序列
             ++将两个机会拼接
             -和--删除元素
-
-    - 列表：要么是Nil(空列表),要么是一个head元素+tail列表
+        
+- 列表：要么是Nil(空列表),要么是一个head元素+tail列表
         ::从给定的头尾创建列表， ::是右结合类别将从末端开始构建
-
-    - s.map(fun) 
+    
+- s.map(fun) 
     - s.flatMap(fun) 展平映射  (spark中rdd调用的map，flatMap就是scala中的实现)
-
-    - s.reduceLeft/Right(op)
+    
+- s.reduceLeft/Right(op)
     - s.foldLeft(init)(op) 提供了额外初始值的reduce
     - s.scanLeft/Right(op) 产生中间结果和最后的结果
     - print(List(1,2,4).reduceLeft(_ + _) #每个元素只出现一次时用`_`代替
@@ -312,6 +360,7 @@
     val sign = obj match{
     case x:Int =>x   #obj首先赋给x,然后判读x是否为Int类型
     case s:String =>s
+    case s2:Double if(s2>0) =>s2  #if条件对double类型匹配进行限制
     case _:BigInt =>Int.MaxValue
     case _ =>0
     }
@@ -338,9 +387,9 @@
     ```
 
 ### 1.7 样例类
-- case class
+- case class, 类似python的dataclass /命名元祖
 - 可new 可不new
-- 参数默认有getter、setter方法，对外可见
+- 参数默认有getter、setter方法，参数类型默认为val,类外可访问
 - 重写了equals,toString,hashCode等方法 
 - 自动生成一个伴生对象，该伴生对象自动生成apply,unapply模板代码
 - 用于模式匹配和值存储(可以new，可以不new)
@@ -415,4 +464,34 @@
     ```
 
 
+
+### 1.11  包
+
+1. 包的导入
+
+   - import packagename.ClassName
+
+   - import util.Random
+   - import util.{Random, Property}  // type newName = Random 为Random取第二个名字
+   - import util.{Random=>Bob, Property=>Alice} 为包取别名 
+   - import util._  # _导入包下的所有内容 
+
+2.  包的创建
+
+   1. 第一步创建包文件
+
+   ```scala
+   // filenam.scala
+   package packgename  # 第一行的非注释语句
+   def fun:={}
+   class A
+   ```
+
+   2. 编译包文件
+
+   ```shell
+   scalac filename.scala
+   ```
+
+   3.  CLASSPATH 中添加编译包的路径
 
