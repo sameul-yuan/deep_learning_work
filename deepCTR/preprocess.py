@@ -35,7 +35,7 @@ class custom_json_serialize(json.JSONEncoder):
 
 
 class MixDataProcessor(object):
-    def __init__(self, conf, epsilon=1e-8, skew_double=False, colocate_embedding=False, log_transform=True):
+    def __init__(self, conf, epsilon=1e-8, skew_double=False, colocate_embedding=False, log_transform=False):
         """
         skew_double: if true, discritize skewed numeric feature 
         colocate_embedding: if true all features share a big embedding instance, else each feature \
@@ -51,9 +51,9 @@ class MixDataProcessor(object):
 
         self.feature_index_map={}
         self.scaler = {}
-        self.skew_double = conf.get('skew_double', skew_double) 
-        self.colocate_embedding = conf.get('colocate_embedding', colocate_embedding)
-        self.log_transform = conf.get('log_transform', log_transform)
+        self.skew_double = conf.get('skew_double') or  skew_double 
+        self.colocate_embedding = conf.get('colocate_embedding') or colocate_embedding
+        self.log_transform = conf.get('log_transform') or  log_transform
         # self.skew_threshold = skew_threshold
         # self.skew_bins
 
@@ -224,7 +224,8 @@ class MixDataProcessor(object):
         
         if double_type == 'normal':
             df[self.double_cols] = (df[self.double_cols] - self.scaler['mean'])/(self.scaler['std'] + self.epsilon)
-           
+        
+        #TODO(cut edge)
         elif double_type == 'minmax':
             lbound = 0
             hbould = 1
@@ -257,49 +258,61 @@ def convert_model_level_2(x):
     else:
         return 'other'
 
+    
 if __name__ == '__main__':
     import yaml
     import pickle
     import argparse
     parser = argparse.ArgumentParser(description='preprocess')
-    parser.add_argument('--pred',store_action=True)
+    parser.add_argument('--pred',action='store_true')
+    parser.add_argument('--colocate',action='store_true')
     parser.add_argument('--data',type=str,required=False)
     args = parser.parse_args()
     
     args_data = args.data if args.data else None
     TRAIN = not(args.pred)
-    
+   
     base_path = os.path.abspath('./')
     cfg = yaml.load(open(os.path.join(base_path,'config.yaml'),'r'))
     
     if TRAIN:
-        raw_data = args_data if args_data is not None  else cfg.get('raw_data')
+        print('processing: train data')
+        sign ='_colocate' if cfg['preprocessing']['colocate_embedding'] or args.colocate else ''
+        print('colocate_emb:',sign)
+        
+        raw_data = args_data if args_data is not None  else cfg.pop('raw_data')
         assert raw_data is not None
         
         tmp_file = {}
         tmp_file['base_path'] = base_path
-        tem_file['raw_data'] = raw_data
-        tmp_file['data_pkl']  = os.path.splitext(raw_data)[0]+'.pkl'
-        tmp_file['feat_dict'] = os.path.join(base_path, 'tmp/features_'+time.strftime('%Y%m%d',time.localtime())+'.dict')
-        tmp_file['feat_pkl'] = os.path.join(base_path,'tmp/features_'+time.strftime('%Y%m%d',time.localtime())+'.pkl')
-        cfg.update({'file', tmp_file})
+        tmp_file['raw_data'] = raw_data
+        tmp_file['data_pkl']  = os.path.splitext(raw_data)[0]+'{}.pkl'.format(sign)#
+        tmp_file['feat_dict'] = os.path.join(base_path, 'tmp/features{}_'.format(sign)+time.strftime('%Y%m%d',time.localtime())+'.dict')
+        tmp_file['feat_pkl'] = os.path.join(base_path,'tmp/features{}_'.format(sign)+time.strftime('%Y%m%d',time.localtime())+'.pkl')
+        cfg.update({'file':tmp_file})
                                    
         # cfg = cfg.pop('preprocessing')
-        df = pd.read_csv(raw_data, sep='\t', encoding='utf-8', error_bad_lines=False, nrows=None)
-        df.columns = df.columns.map(lambda x: x.split('.')[1])
+#         df = pd.read_csv(raw_data, sep='\t', encoding='utf-8', error_bad_lines=False, nrows=None)
+#         df.columns = df.columns.map(lambda x: x.split('.')[1])
+        df= pd.read_csv(raw_data)
+        df = df.rename(columns={'apply_label':'label'})
         if "Unnamed: 0" in df.columns:
             df = df.drop(columns=["Unnamed: 0"])
-
+            
+        drop_cols = ['user_id', 'send_time', 'group', 'cutoff_dayno','cutoff_month_day','loan_label']
+        non_na= df.count()/len(df)
+        non_na_threshold=0.005
+        na_cols = non_na[non_na<non_na_threshold].index.tolist()
+        na_cols
+        df = df.drop(columns=na_cols+drop_cols)
         # df_pos = df[df.label==1]
         # df_neg = df[df.label==0].sample(frac=0.5, replace=False)
         # df = pd.concat([df_neg,df_pos],axis=0,ignore_index=True)
         # print(df.label.value_counts())
-       
         # df['model_level_2'] = df['model_level_2'].str.lower().map(convert_model_level_2)
         
         mdp = MixDataProcessor(cfg['preprocessing'])
-
-        mdp.fit(df, mannual_cat_cols=['age','is_be_married'], exclude_cols= ['imei','ssoid', 'user_id', 'send_time', 'group', 'cutoff_dayno','cutoff_month_day','loan_label'])
+        mdp.fit(df, mannual_cat_cols=['age','is_be_married'], exclude_cols= ['label','imei','ssoid', 'loan_label'])
         df_out = mdp.transform(df, double_type='normal')
         df_out = df_out.drop(columns=mdp.drop_cols)
         
@@ -311,7 +324,7 @@ if __name__ == '__main__':
 
         json.dump(mdp.__dict__, open(tmp_file['feat_dict'],'w+'), cls=custom_json_serialize, ensure_ascii=False, indent=2)
         pickle.dump(mdp,open(tmp_file['feat_pkl'],'wb+'))
-        yaml.dump(cfg, stream=open(os.path.join(base_path,'_config_.yaml'),'w+'))
+        yaml.dump(cfg, stream=open(os.path.join(base_path,'_config{}.yaml'.format(sign)),'w+'))
      
         
     # NOTE test 
