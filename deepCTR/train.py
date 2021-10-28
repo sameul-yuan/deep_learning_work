@@ -283,43 +283,20 @@ def predict(model, eval_dataset,
     return df
 
 
-if __name__ == '__main__':
 
-#     parser = argparse.ArgumentParser(description='train_model')
-#     parser.add_argument('--raw_data',type=str,required=False)
-#     args = parser.parse_args()
-    
-
+def train_fm():
     is_predict = False
-    # print('test')
-    base_path = '/home/notebook/code/personal/auto_train_deep'
-    
-    all_cfg = yaml.load(open('./_config_.yaml'),'r')
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = '1'
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'  #torch.cuda.device_count()
-
-
-    # NOTE 2. for orginal_feature(400dim) + emb
-
-    # data_path = os.path.join(base_path,'data/lookalike_autodis_log_level2_reduce_neg.pkl')
-    # feature_cfg  = json.load(open(os.path.join(base_path,'server/lookalike_autodis_log_level2_reduce_neg.dict'),'r')) 
-
-    data_path = all_cfg['tmp']['data_pkl_file']
-    feature_cfg =  all_cfg['tmp']['feat_dict_file']
-    signature = os.path.basename(data_path).split('.')[0]+'_'+os.path.basename(feature_cfg).split('.')[0]
-
-
-
-    df = pd.read_pickle(data_path)
-    drop_cols = ['label']
-    df = df.drop(columns=drop_cols)
-    df = df.rename(columns={'label_2m':'label'})
-    print(df.shape)
-    
-
-    
+   
     if not is_predict:  # for training model 
+         
+        all_cfg = yaml.load(open('./_config_colocate.yaml','r'))
+        
+        base_path, data_path = all_cfg['file']['base_path'], all_cfg['file']['data_pkl']
+        feature_cfg = json.load(open(all_cfg['file']['feat_dict'],'r'))
         network_cfg = all_cfg['FM']
         train_cfg = all_cfg['train']
         train_cfg['device'] = device
@@ -328,13 +305,11 @@ if __name__ == '__main__':
         pretrained_cfg.initializer_range = network_cfg['init_norm_var']
         pretrained_cfg.hidden_size = network_cfg['embedding_size']
 
-        signature = signature.format(network_cfg['embedding_size'], train_cfg['per_gpu_batch_size'],
+        signature = 'autoint_emb-{}_batch-{}_afm-{}_rate-{}'.format(network_cfg['embedding_size'], train_cfg['per_gpu_batch_size'],
                                   int(network_cfg['use_afm']),train_cfg['learning_rate'])
 
         # TODO(分层抽样)
-
-        df_test = df.sample(frac=0.1, replace=False)
-        df = df[~df.imei.isin(df_test.imei)]
+        df = pd.read_pickle(data_path)
 
         df_train, df_eval = train_test_split(df, stratify=df['label'], test_size=0.2, random_state=train_cfg['seed'])
      
@@ -348,19 +323,18 @@ if __name__ == '__main__':
         # df_train = pd.concat([df_train_pos,df_train_neg],axis=0,ignore_index=True)
 
         print(df_train.shape, df_eval.shape)
-        print(df_train['label'].mean(), df_eval['label'].mean())
+        print(df_train['label'].mean(),df_eval['label'].mean())
 
         train_dataset = DeepFmDataset(df_train,feature_cfg)
         eval_dataset = DeepFmDataset(df_eval,feature_cfg)
         
-        checkpoint_dir = os.path.join(base_path,'model',time.strftime('%Y%m%d',time.localtime())+signature)
+        checkpoint_dir = os.path.join(base_path,'server/model',time.strftime('%Y%m%d',time.localtime())+'_'+signature)
         logger.info(checkpoint_dir)
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir, mode=0o777, exist_ok=False)
         json.dump(all_cfg, open(os.path.join(checkpoint_dir,'config.json'),'w+'))
-        # writer = SummaryWriter(log_dir=os.path.join(base_path,'log',signature),filename_suffix=signature)
-        # atexit.register(writer.close)
-        writer=None
+        writer = SummaryWriter(log_dir=os.path.join(base_path,'log',signature),filename_suffix=signature)
+        atexit.register(writer.close)
         
         # model = DeepFM(network_cfg, field_size=feature_cfg['field_dim'], feature_size=feature_cfg['feature_dim'])
         model = AutoInt(pretrained_cfg, network_cfg, field_size=feature_cfg['field_dim'], feature_size=feature_cfg['feature_dim'])
@@ -369,8 +343,8 @@ if __name__ == '__main__':
 
         target_dir = checkpoint_dir+'_{}'.format(round(best_auc,4))
         spc.call(['mv '+checkpoint_dir+' ' + target_dir],shell=True)
-
-
+        
+        
         ##-------------------predict-------------------------------------------------
         print('predict'.center(50,'-'))
         model.to(device)
@@ -391,64 +365,34 @@ if __name__ == '__main__':
         shutil.copyfile('./_config_.yaml', './spark/_config_.yaml')
         shutil.copyfile(os.path.join(target_dir,'checkpoint_last/model.dict'), './spark/model.dict')
         
-        
-        
-
-
-
-
     else:   # for predict new data
         # model_path  = os.path.join(base_path, 'server/model/20201202_deepfm_0.7812')
-        print('predict')
-        all_cfg = yaml.load(open(os.path.join(base_path,'config.yaml'),'r'))
-        network_cfg = all_cfg['FM']
-        train_cfg = all_cfg['train']
-        train_cfg['device'] = device
+        model_path  = os.path.join(base_path, 'server/model/20201223autoint_with_emb_paper_0.7909')
 
-        pretrained_cfg  = PretrainedConfig(**all_cfg['self_attention']) # for AutoInt
-        pretrained_cfg.initializer_range = network_cfg['init_norm_var']
-        pretrained_cfg.hidden_size = network_cfg['embedding_size']
-
-        model =  AutoInt(pretrained_cfg, network_cfg, field_size=feature_cfg['field_dim'], feature_size=feature_cfg['feature_dim'])
-
-        # model_path  = '/home/notebook/code/personal/smart_rec/deepFM/server/model/20210111_autoint_lookalike_level2_0.9002/checkpoint_last/model.dict'
-        model_path  = '/home/notebook/code/personal/smart_rec/deepFM/server/model/20210111_autoint_lookalike_level2_0.9002/checkpoint_last/model.dict'
-
-        model.load_state_dict(torch.load(model_path,map_location=torch.device('cpu')))  #map_location=torch.device('cpu')
-        model.to(device)
-        model.eval()
 
         df.reset_index(drop=True, inplace=True)
-        dataset = DeepFmDataset(df,feature_cfg, is_predict=True)  #is_predict=True  return  label
+        dataset = DeepFmDataset(df,feature_cfg,is_predict=False)  #is_predict=True  return  label
 
-        df_result = predict(model, dataset, device=device, verbose=True)
+        model = torch.load(os.path.join(model_path, 'checkpoint_last/model.pt'), map_location=torch.device(device)) #20201120(64dim)
+        
+        # result = evaluate(model, dataset,device=device, verbose=True)
+        # df_result = pd.DataFrame({'label':result['label'],'pred':result['pred']})
+
+        df_result = predict(model, dataset, device=device,verbose=True)
 
         assert df_result.shape[0] == df.shape[0]
-        # df_result['imei'] = df['imei'].astype(str)
-        df['prob'] = df_result['prob']
-        df = df.reindex(columns=['imei','prob'] + feature_cfg['cat_cols'] + feature_cfg['double_cols'])
-        df.to_csv('/home/notebook/code/personal/smart_rec/deepFM/server/model/20210111_autoint_lookalike_level2_0.9002/checkpoint_last/lookalike_var_off.csv',index=False)
+        df_result['imei'] = df['imei'].astype(str)
+        df_result['label'] = df['label']
+        df_result.to_csv(os.path.join(model_path,'logits.csv'),index=False)
 
-
-
+        print('predict done.')
         
-        # print(model)
-        # model = torch.load(os.path.join(model_path, 'checkpoint_last/model.pt'), map_location=torch.device(device)) #20201120(64dim)
-  
+if __name__ =='__main__':
+    train_fm()
+    
+# if __name__ == '__main__':
 
-        # df.reset_index(drop=True, inplace=True)
-        # dataset = DeepFmDataset(df,feature_cfg, is_predict=False)  #is_predict=True  return  label
-
-        
-        
-        # # result = evaluate(model, dataset,device=device, verbose=True)
-        # # df_result = pd.DataFrame({'label':result['label'],'pred':result['pred']})
-
-        # df_result = predict(model, dataset, device=device,verbose=True)
-
-        # assert df_result.shape[0] == df.shape[0]
-        # df_result['imei'] = df['imei'].astype(str)
-        # df_result['label'] = df['label']
-        # df_result.to_csv('/home/notebook/code/personal/smart_rec/deepFM/server/model/20210107_autoint_lookalike/checkpoint_last/logits.csv',index=False)
-
-        # print('predict done.')
+# #     parser = argparse.ArgumentParser(description='train_model')
+# #     parser.add_argument('--raw_data',type=str,required=False)
+# #     args = parser.parse_args()
+   
