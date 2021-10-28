@@ -277,9 +277,9 @@ if __name__ == '__main__':
     
     if TRAIN:
         print('processing: train data')
-        sign ='_colocate' if cfg['preprocessing']['colocate_embedding'] or args.colocate else ''
-        print('colocate_emb:',sign)
-        
+        colocate_emb = cfg['preprocessing']['colocate_embedding'] or args.colocate
+        sign ='_colocate' if colocate_emb else ''
+        print('colocate_emb:',colocate_emb)
         raw_data = args_data if args_data is not None  else cfg.pop('raw_data')
         assert raw_data is not None
         
@@ -311,7 +311,7 @@ if __name__ == '__main__':
         # print(df.label.value_counts())
         # df['model_level_2'] = df['model_level_2'].str.lower().map(convert_model_level_2)
         
-        mdp = MixDataProcessor(cfg['preprocessing'])
+        mdp = MixDataProcessor(cfg['preprocessing'], colocate_embedding=colocate_emb)
         mdp.fit(df, mannual_cat_cols=['age','is_be_married'], exclude_cols= ['label','imei','ssoid', 'loan_label'])
         df_out = mdp.transform(df, double_type='normal')
         df_out = df_out.drop(columns=mdp.drop_cols)
