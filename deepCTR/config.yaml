@@ -1,0 +1,99 @@
+
+raw_data: '/home/service/var/data2/yuanyuqing/data/train_coupon_search.csv'
+# raw_data: '/home/service/var/data2/yuanyuqing/data/train_coupon.csv'
+
+preprocessing:
+  drop_cat_na_ratio: 0.98  
+  drop_double_na_ratio: 0.8
+  cat_na_sentinel: -999
+  save_path: null
+  skew_double: false
+  skew_bins: 30
+  skew_threshold: 5
+  colocate_embedding: false
+  log_transform: true
+
+
+DCN:
+  cross_num: 2
+  cross_parameterization: 'vector'
+  dnn_hidden_units: [32,32]
+  activation: 'relu'
+  task: 'binary'
+  embedding_dim: 8
+
+FM:
+  embedding_size: 16
+  hidden_layer_sizes: [32,32,16]
+  init_norm_var: 0.02
+  hidden_act: 'relu'
+  drop_prob: 0.3
+  use_afm: True
+  attention_size: 4
+  attention_drop_p: 0.2
+  use_bilinear_interaction: true
+
+self_attention:
+  # hidden_size: 16 # 256
+  num_hidden_layers: 2
+  # intermediate_size: 64 #512
+  num_attention_heads: 2 #8
+  hidden_dropout_prob: 0.1
+  attention_probs_dropout_prob: 0.2
+  max_position_embeddings: null
+  layer_norm_eps: 1.0e-8
+  hidden_act: 'gelu'
+
+
+train:
+  learning_rate: 1.0e-4
+  min_lr: 1.0e-6
+  lr_factor: 0.1
+  lr_schedule_patience: 5
+  early_stop_patience: 10
+
+  use_focalloss: true
+  focal_alpha: 0.25
+  focal_gamma: 2
+
+  n_gpu: 1
+  per_gpu_batch_size: 512
+  max_grad_norm: 1.0
+  weight_decay: 2.0e-7 # L2 penalty 1e-8
+  max_steps: 100000
+  warmup_steps: 5000 #
+  epochs: 100
+
+  pos_weight: 5
+  seed: 42
+  logging_steps: 1000
+  
+# train:
+#   learning_rate: 1.0e-4
+#   min_lr: 1.0e-6
+#   lr_factor: 0.1
+#   lr_schedule_patience: 2
+#   early_stop_patience: 4
+
+#   use_focalloss: true
+#   focal_alpha: 0.5
+#   focal_gamma: 1
+
+#   n_gpu: 1
+#   per_gpu_batch_size: 256
+#   max_grad_norm: 1.0
+#   weight_decay: 2.0e-7 # L2 penalty 1e-8
+#   max_steps: 100000
+#   warmup_steps: 5000 #
+#   epochs: 50
+
+#   pos_weight: 5
+#   seed: 42
+#   logging_steps: 1000
+
+# autodis:
+#   meta_nums: 5
+#   meta_tao: 1.0e-4
+#   meta_hidden_size: 10
+
+
