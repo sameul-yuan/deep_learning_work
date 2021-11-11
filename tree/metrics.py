@@ -351,8 +351,64 @@ def topological_sort(l1:list, l2:list)->list:
     ret.extend(l1[prev1+1:]+l2[prev2+1:])
     return ret    
     
+	
+class MapBinCDF(object):
+    def __init__(self, number_bins=100):
+        self.num_bins = number_bins
+        self.bins = 0
+        self.bin_means = {}
+        self.min_v = np.finfo('float32').min
+        self.max_v = np.finfo('float32').max
     
-    
+    def fit(self, X: pd.Series):
+         # _, bins = pd.qcut(X.values, q=self.num_bins, retbins=True, duplicates='drop') #
+        X = np.array(sorted(X.values)) # list
+        self.min_v, self.max_v = X[0], X[-1]
+        nums = len(X)
+        inds = list((nums*np.arange(0,self.num_bins)/(self.num_bins)).astype(int))
+        inds.append(nums-1) #最后一个数
+        
+        inds_reduce = []
+        bin_edges= []
+        inds_reduce.append(0)
+        bin_edges.append(X[0])
+        prev = X[0]
+        
+        for ind in inds[1:]:  #drop duplicates
+            if X[ind]==prev:
+                continue
+            else:
+                inds_reduce.append(ind)
+                bin_edges.append(X[ind])
+                prev = X[ind]
+
+        for key, (s, e) in enumerate(zip(inds_reduce[:-1],inds_reduce[1:])):
+            if key!=len(inds_reduce[:-1])-1:
+                self.bin_means[key]=X[s:e].mean()
+            else:
+                self.bin_means[key]=X[s:e+1].mean()
+                
+        self.bins = bin_edges
+        
+        self.key_min ,self.key_max = min(self.bin_means.keys()),max(self.bin_means.keys())
+            
+    def transform(self, X: pd.Series):
+        X = X.map(lambda x: self.min_v if x<=self.min_v else x)
+        X = X.map(lambda x: self.max_v if x>=self.max_v else x)
+        index = np.searchsorted(self.bins, X, side='right') #`a[i-1] <= v < a[i]
+        index = index-1
+        index = np.asarray([min(max(self.key_min, v),self.key_max) for v in index])
+        return index/(len(self.bins)-1)  #cdf 
+        
+    def invert_transform(self, X:np.array):
+        # X Predicted quantiles
+#         X = map(lambda x:  self.min_p if x<=self.min_p else x, X)
+#         X = map(lambda x:  self.max_p if x>=self.max_p else x, X)
+#         X = (int(x*len(self.bins)) for x in X)
+        X =  [int(x*(len(self.bins)-1)) for x in X]
+        X =  [min(max(self.key_min,x),self.key_max) for x in X]
+        res = np.asarray([self.bin_means[x] for x in X])
+        return res     
     
     
     
