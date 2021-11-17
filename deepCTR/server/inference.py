@@ -220,7 +220,7 @@ def model_udf_inference(input : pd.Series)->pd.Series:
     dataset = SerDataset(input)
     sampler = SequentialSampler(dataset)
     loader = torch.utils.data.DataLoader(dataset, sampler=sampler, batch_size=1000, num_workers=2)
-    # loader = torch.utils.data.DataLoader(input, batch_size=4)
+    # loader = torch.utils.data.DataLoader(input, batch_size=4)  #如果input不是嵌套列表，可以直接采用这种方式
 
     all_predictions=[]
     eval_model.eval()
