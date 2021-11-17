@@ -90,6 +90,8 @@ from sklearn.model_selection import train_test_split
 import lightgbm as lgb
 from utils import get_auc_ks,calc_threshold_vs_depth,encode_category_feature  #calc_feature_importance
 
+
+#                          https://www.iteblog.com/archives/9814.html
 #pandas_UDF, 有两种类型的Pandas_UDF，分别是Scalar（标量映射）和Grouped Map（分组映射）
 
 #=================1. Scalar Pandas UDF用于向量化标量操作。常常与select和withColumn等函数一起使用。其中调用的Python函数需要使用pandas.Series作为输入并返回一个具有相同长度的pandas.Series。具体执行流程是，Spark将列分成批，并将每个批作为数据的子集进行函数的调用，进而执行panda UDF，最后将结果连接在一起。
