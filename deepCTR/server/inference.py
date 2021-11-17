@@ -5,6 +5,17 @@ import pandas as pd
 
 os.environ['ARROW_PRE_0_15_IPC_FORMAT'] = '1'
 
+# spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+# spark.conf.set("spark.sql.execution.arrow.enabled", "true")
+# spark.conf.set('spark.sql.adaptive.enabled', 'false')
+
+#spark.conf.set('hive.exec.dynamic.partition', 'true')
+#spark.conf.set('hive.optimize.sort.dynamic.partition', 'false')
+#spark.conf.set('hive.exec.dynamic.partition.mode', 'nonstrict')
+#spark.conf.set("spark.sql.shuffle.partitions", "3000")
+#spark.conf.set('hive.exec.dynamic.partition', 'true')
+#spark.conf.set("spark.sql.parser.quotedRegexColumnNames", "true")
+
 
 # start spark session
 from pyspark import SparkContext, SparkConf
