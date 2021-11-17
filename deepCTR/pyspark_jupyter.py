@@ -89,3 +89,80 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
 from utils import get_auc_ks,calc_threshold_vs_depth,encode_category_feature  #calc_feature_importance
+
+#pandas_UDF, 有两种类型的Pandas_UDF，分别是Scalar（标量映射）和Grouped Map（分组映射）
+
+#=================1. Scalar Pandas UDF用于向量化标量操作。常常与select和withColumn等函数一起使用。其中调用的Python函数需要使用pandas.Series作为输入并返回一个具有相同长度的pandas.Series。具体执行流程是，Spark将列分成批，并将每个批作为数据的子集进行函数的调用，进而执行panda UDF，最后将结果连接在一起。
+# 声明函数并创建UDF
+ 
+def multiply_func(a, b):
+    return a * b
+multiply = pandas_udf(multiply_func, returnType=LongType())
+x = pd.Series([1, 2, 3])
+df = spark.createDataFrame(pd.DataFrame(x, columns=["x"]))
+ 
+# Execute function as a Spark vectorized UDF
+df.select(multiply(col("x"), col("x"))).show()
+# +-------------------+
+# |multiply_func(x, x)|
+# +-------------------+
+# |                  1|
+# |                  4|
+# |                  9|
+# +-------------------+
+
+#===============2. Group Map， （分组映射）panda_udf与groupBy().apply()一起使用,StructType对象中的Dataframe特征顺序需要与分组中的Python计算函数返回特征顺序保持一致
+df = spark.createDataFrame(
+    [(1, 1.0), (1, 2.0), (2, 3.0), (2, 5.0), (2, 10.0)],
+    ("id", "v"))
+ 
+@pandas_udf("id long, v double", PandasUDFType.GROUPED_MAP)
+def subtract_mean(pdf):
+    # pdf is a pandas.DataFrame
+    v = pdf.v
+    return pdf.assign(v=v - v.mean())
+ 
+df.groupby("id").apply(subtract_mean).show()
+# +---+----+
+# | id|   v|
+# +---+----+
+# |  1|-0.5|
+# |  1| 0.5|
+# |  2|-3.0|
+# |  2|-1.0|
+# |  2| 4.0|
+# +---+----+
+
+#3. =============== group agg :F常常与groupBy().agg()和pyspark.sql.window一起使用
+from pyspark.sql import Window
+ 
+df = spark.createDataFrame(
+    [(1, 1.0), (1, 2.0), (2, 3.0), (2, 5.0), (2, 10.0)],
+    ("id", "v"))
+ 
+@pandas_udf("double", PandasUDFType.GROUPED_AGG)
+def mean_udf(v):
+    return v.mean()
+ 
+df.groupby("id").agg(mean_udf(df['v'])).show()
+# +---+-----------+
+# | id|mean_udf(v)|
+# +---+-----------+
+# |  1|        1.5|
+# |  2|        6.0|
+# +---+-----------+
+
+w = Window \
+    .partitionBy('id') \
+    .rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
+df.withColumn('mean_v', mean_udf(df['v']).over(w)).show()
+# +---+----+------+
+# | id|   v|mean_v|
+# +---+----+------+
+# |  1| 1.0|   1.5|
+# |  1| 2.0|   1.5|
+# |  2| 3.0|   6.0|
+# |  2| 5.0|   6.0|
+# |  2|10.0|   6.0|
+# +---+----+------+
+
