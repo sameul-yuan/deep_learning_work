@@ -94,6 +94,7 @@
     - DICM:(deep Image CTR model)
         - 引入用户的行为图片建模，利用视觉偏好增强用户的行为表示
     
+- multi-task
 
 
 
