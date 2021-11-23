@@ -94,7 +94,20 @@
     - DICM:(deep Image CTR model)
         - 引入用户的行为图片建模，利用视觉偏好增强用户的行为表示
     
-- multi-task
+- Multi-Task 
+    - 具有行为依赖关系（样本选择偏差，数据稀疏性）
+        - ESMM
+        - ESM^2
+        - HM^3
+        - AITM(如何信息迁移）
+    - 具有任务间的相关性（负迁移,蹊跷版线像）
+        - hard parameter sharing: task conficts 
+        - MOE: 门控网络缓解sample dependent问题，不同任务共同一个门控网络
+        - MMOE： 不同任务具有不同的门控网络，任务见相关性弱时也能起到正向作用
+        - CGC：  针对不同task的experts互相分离，隔离任务间的干扰， 同时通过common experts迁移不同任务间的有有用信息
+            > CGC achieves more flexible balance between tasks and better deals with task conflicts and sample-dependent correlations
+        - PLE： Multi-layer格式，逐步分离task-specific和common参数
+    - loss调整
 
 
 
