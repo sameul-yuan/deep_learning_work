@@ -9,7 +9,7 @@
         - 特征优化，罕见特征一一定概率加入模型
         - 量化精度
         - 多模型并行训练，共享训练数据，单独保存参数
-- 深度学习方法
+- 深度学习方法(特征交织)
     - DSSM (deep structrued semantic Model)->搜索广告
         - 基于query和document对的点击规律监督学习query和document的低维语义表示
         - LSA:是通过单词的document-word的矩阵SVD降维学习
@@ -104,11 +104,19 @@
         - hard parameter sharing: task conficts 
         - MOE: 门控网络缓解sample dependent问题，不同任务共同一个门控网络
         - MMOE： 不同任务具有不同的门控网络，任务见相关性弱时也能起到正向作用
-        - CGC：  针对不同task的experts互相分离，隔离任务间的干扰， 同时通过common experts迁移不同任务间的有有用信息
+        - CGC：  针对不同task的experts互相分离，隔离任务间的干扰， 同时通过common experts迁移不同任务间的有用信息
             > CGC achieves more flexible balance between tasks and better deals with task conflicts and sample-dependent correlations
-        - PLE： Multi-layer格式，逐步分离task-specific和common参数
+        - PLE： Multi-level格式，逐步分离不同task间的参数,逐步聚合底层特到高层的share experts，并分发到各个任务塔，实现更加灵活的表示学习和共享
+            > PLE adopts a progressive separation routing to absorb information from all lower-layer experts, extract higher-level shared knowledge, and separate task-specific parameters gradually.
     - loss调整
+        - loss 幅度
+        - loss 方向
+        - loss 快慢
 
+- 超长用户行为序列建模
+    - SIM
+    - RIM
+    - UBR4Rec
 
 
 ---
