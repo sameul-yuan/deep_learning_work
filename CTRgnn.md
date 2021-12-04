@@ -32,11 +32,12 @@
         - 离散特征编码+丢弃出现次数太低的特征值
         - 连续特征归一化到0~1
             1. 累积分布函数归一化
+                
                 >  $f(x)=P(X \le x)=\frac{\sum_{i=1}^{N}.I(X_i\le x)}{N}$
             2. 将$f(x)$映射到`q`分位
         - wide部分每次有新数据到到是会warm-up重新训练，wide部分和DNN部分开输入
-        - model-serving阶段为满足10ms响应，开启多线程优化 
-
+- model-serving阶段为满足10ms响应，开启多线程优化 
+        
     - DeepFM
     - xDeepFM：
         - CIN(compress interaction network)显示的特征交织(vector wise交互)
@@ -54,26 +55,27 @@
             如果没有隐藏层且 $\mathbb{w_l}=[1,1,1,1,\cdots]$则是标准的FM
         - 将Bi-Interaction替换为拼接层则退化为wide&deep 模型
         - 将Bi-interAction输入DNN相当于给神经网络输入了有效的二阶交互信息减轻了DNN的学习负担，因此DNN只有一个隐层时表现就已经很好；
-        - 将DeepFM的DNN部分换成Bi-Interaction+DNN效果会怎么样？
-
+    - 将DeepFM的DNN部分换成Bi-Interaction+DNN效果会怎么样？
+    
     - AFM
         - 模型结构和NFM基本类似，但缺少隐藏层提取高阶特征
         - 将NFM的Bi-Interaction 换成pair-wise interaction
             - pair-wise interaction得到n(n-1)/2个向量
             - 将n(n-1)/2个向量进行sum-pooling即为Bi-interaction的结果
             - 然而，AFM认为交叉向量的重要性并不一样， 对这n(n-1)/2个向量进行attention pooling，
+                
                 >$f_{PI}(\mathbb{V_x}) = \sum_{i=1}^{n}\sum_{j=i+1}^{n}a_{ij}*x_i\mathbb{v_i}\odot x_j\mathbb{v_j}$ 
             - attention的因子通过attention network来学（全连接网络)
                 > $\hat{a}_{ij} = \mathbb{h}*relu (\mathbf{W}(x_i \mathbb{v_i} \odot x_j\mathbb{v_j})+\mathbb{b})$  
                 $a_{ij}= softmax(\hat{a}_{ij})$
         - AFM pair-wise Interaction 和NFM Bi-Interaction的输出都有dropout
-        - 网格搜索超参
-        - 加上DNN会怎么样？
-
+    - 网格搜索超参
+    - 加上DNN会怎么样？
+        
     - ESMM: CVR（点击转化率预估)
-        - 通过多任务同时训练CVR和CTR来解决样本选择偏差问题(CVR在点击样本训练，但是推断是在整个曝光样本)
+    - 通过多任务同时训练CVR和CTR来解决样本选择偏差问题(CVR在点击样本训练，但是推断是在整个曝光样本)
         - p(z=1|y=1, x) = p(z=1,y=1|x)/p(y=1|x)
-
+    
     - DIN:(Deep Interest network)：展示广告
         - 用户历史行为数据建模
         - 普通DNN对历史行为emdedding进行笼统的sum-pooling/avg-pooling会丢失很多信息
@@ -88,10 +90,11 @@
     - DSIN:(Deep session interest network)
         - 该模型利用用户的历史会话来建模用户行为序列
         - 引入了multi-header self-attention 进行会话兴趣提取
-        - 引入BI_LSTM 进行不同会话的兴趣交互
+    - 引入BI_LSTM 进行不同会话的兴趣交互
         - ad的embedding和会话兴趣、兴趣交互的输出分别进行attention激活级联其他特征送入FC
-
+    
     - DICM:(deep Image CTR model)
+        
         - 引入用户的行为图片建模，利用视觉偏好增强用户的行为表示
     
 - Multi-Task 
@@ -103,23 +106,31 @@
     - 具有任务间的相关性（负迁移,蹊跷版线像）
         - hard parameter sharing: task conficts 
         - MOE: 门控网络缓解sample dependent问题，不同任务共同一个门控网络
-        - MMOE： 不同任务具有不同的门控网络，任务见相关性弱时也能起到正向作用
+        - MMOE： 不同任务具有不同的门控网络，任务间相关性弱时也能起到正向作用
         - CGC：  针对不同task的experts互相分离，隔离任务间的干扰， 同时通过common experts迁移不同任务间的有用信息
+            
             > CGC achieves more flexible balance between tasks and better deals with task conflicts and sample-dependent correlations
         - PLE： Multi-level格式，逐步分离不同task间的参数,逐步聚合底层特到高层的share experts，并分发到各个任务塔，实现更加灵活的表示学习和共享
+            
             > PLE adopts a progressive separation routing to absorb information from all lower-layer experts, extract higher-level shared knowledge, and separate task-specific parameters gradually.
     - loss调整
-        - loss 幅度
-        - loss 方向
-        - loss 快慢
-
+        - loss 幅度：不确定性加权，loss小的不确定应该小，loss大的不确定应该大（loss大的应该权重小，所有权重为不确定性的倒数)
+    - loss 方向:  防止不同任务的梯度拉扯，减去相反方向的梯度 
+        - loss 快慢:   Ai  = L(t-1)/L(t-2), 各个任务的权重为solfmax(Ai)
+        - 综合梯度和快慢： 新建一个网络学习权重参数，每个任务的梯度二范数回归到所有任务的平均二范数，同时每个回归通过loss下降快慢进行加权
+    
 - 超长用户行为序列建模
-    - SIM
-    - RIM
-    - UBR4Rec
+    - SIM:  search interest model
+    - RIM ： retreival interest model
+    - UBR4Rec: user behavior retrevial 
 
 - 对比学习
+
     - 长尾物品和用户学习的更充分
+    - 对比学习三要素：
+      - 如何构造编码器
+      - 如何构造正负样本
+      - 如何构造lossfuncion
 ---
 # 图网络与推荐系统
 GNN的限制：
@@ -144,6 +155,7 @@ GNN的限制：
         - $f^TLf = \frac{1}{2}\underset{v_i \in V}{\sum}\underset{v_j \in V}{\sum}w_{i,j}\left(f(v_i)-f(v_j)\right)^2$, 反应了节点间的信号变化强度，$w_{i,j}$为边权，
         - $y = \underbrace{U}_{逆变换}g_{\theta}\underbrace{(\Lambda)\underbrace{U^Tx}_{谱变换}}_{谱变换乘积}$
     - polynomial parametrize
+        
         - $g_{\theta}(\Lambda) = \sum_{k=0}^{K}\theta_{k}\Lambda^k$, K 个参数,O($N^2$)的计算复杂度
     - ChebNet
         - chebyshev polynomial 
@@ -163,7 +175,7 @@ GNN的限制：
             >5. 通过不同尺度感受野的组合对提高模型对节点的表征能力(类似Inception)
 
 
-    
+​    
 
 ## 2、异构图
 1. meta-path: 连接两个对象的复合关系，定义了一种语义捕获结构
