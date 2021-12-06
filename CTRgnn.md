@@ -131,6 +131,10 @@
       - 如何构造编码器
       - 如何构造正负样本
       - 如何构造lossfuncion
+
+- 因果推理
+    - 因果推理缓解推荐系统物品的流行度偏差（逆权重分数，加入无偏数据，嵌入分解表示）： Model-Agnostic Counterfactual Reasoning for Eliminating Popularity Bias in Recommender System
+    - 反事实理论增强用户行为序列数据： Counterfactual Data-Augmented Sequential Recommendation
 ---
 # 图网络与推荐系统
 GNN的限制：
