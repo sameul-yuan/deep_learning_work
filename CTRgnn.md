@@ -36,7 +36,7 @@
                 >  $f(x)=P(X \le x)=\frac{\sum_{i=1}^{N}.I(X_i\le x)}{N}$
             2. 将$f(x)$映射到`q`分位
         - wide部分每次有新数据到到是会warm-up重新训练，wide部分和DNN部分开输入
-- model-serving阶段为满足10ms响应，开启多线程优化 
+        - model-serving阶段为满足10ms响应，开启多线程优化 
         
     - DeepFM
     - xDeepFM：
@@ -55,7 +55,7 @@
             如果没有隐藏层且 $\mathbb{w_l}=[1,1,1,1,\cdots]$则是标准的FM
         - 将Bi-Interaction替换为拼接层则退化为wide&deep 模型
         - 将Bi-interAction输入DNN相当于给神经网络输入了有效的二阶交互信息减轻了DNN的学习负担，因此DNN只有一个隐层时表现就已经很好；
-    - 将DeepFM的DNN部分换成Bi-Interaction+DNN效果会怎么样？
+        - 将DeepFM的DNN部分换成Bi-Interaction+DNN效果会怎么样？
     
     - AFM
         - 模型结构和NFM基本类似，但缺少隐藏层提取高阶特征
@@ -69,11 +69,11 @@
                 > $\hat{a}_{ij} = \mathbb{h}*relu (\mathbf{W}(x_i \mathbb{v_i} \odot x_j\mathbb{v_j})+\mathbb{b})$  
                 $a_{ij}= softmax(\hat{a}_{ij})$
         - AFM pair-wise Interaction 和NFM Bi-Interaction的输出都有dropout
-    - 网格搜索超参
-    - 加上DNN会怎么样？
+        - 网格搜索超参
+        - 加上DNN会怎么样？
         
     - ESMM: CVR（点击转化率预估)
-    - 通过多任务同时训练CVR和CTR来解决样本选择偏差问题(CVR在点击样本训练，但是推断是在整个曝光样本)
+        - 通过多任务同时训练CVR和CTR来解决样本选择偏差问题(CVR在点击样本训练，但是推断是在整个曝光样本)
         - p(z=1|y=1, x) = p(z=1,y=1|x)/p(y=1|x)
     
     - DIN:(Deep Interest network)：展示广告
@@ -114,7 +114,7 @@
             
             > PLE adopts a progressive separation routing to absorb information from all lower-layer experts, extract higher-level shared knowledge, and separate task-specific parameters gradually.
     - loss调整
-        - loss 幅度：不确定性加权，loss小的不确定应该小，loss大的不确定应该大（loss大的应该权重小，所有权重为不确定性的倒数)
+        - loss 幅度：不确定性加权，loss小的不确定应该小，loss大的不确定应该大（loss大的应该权重小，所以权重为不确定性的倒数)
     - loss 方向:  防止不同任务的梯度拉扯，减去相反方向的梯度 
         - loss 快慢:   Ai  = L(t-1)/L(t-2), 各个任务的权重为solfmax(Ai)
         - 综合梯度和快慢： 新建一个网络学习权重参数，每个任务的梯度二范数回归到所有任务的平均二范数，同时每个回归通过loss下降快慢进行加权
@@ -133,7 +133,7 @@
       - 如何构造lossfuncion
 
 - 因果推理
-    - 因果推理缓解推荐系统物品的流行度偏差（逆权重分数，加入无偏数据，嵌入分解表示）： Model-Agnostic Counterfactual Reasoning for Eliminating Popularity Bias in Recommender System
+    - 因果推理缓解推荐系统物品的流行度偏差（其他如逆权重分数，加入无偏数据，嵌入分解表示）： Model-Agnostic Counterfactual Reasoning for Eliminating Popularity Bias in Recommender System
     - 反事实理论增强用户行为序列数据： Counterfactual Data-Augmented Sequential Recommendation
 ---
 # 图网络与推荐系统
