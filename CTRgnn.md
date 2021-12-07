@@ -133,6 +133,8 @@
 
 - 因果推理
     - 因果推理缓解推荐系统物品的流行度偏差（其他如逆权重分数，加入无偏数据，嵌入分解表示）： Model-Agnostic Counterfactual Reasoning for Eliminating Popularity Bias in Recommender System
+    - 域自适应： 因果推理实现分布外预测，训练数据服从分布Pxy，预测Qxy分布的数据
+    - 缓解数据选择偏差：考虑数据生成过程，数据偏差是否和结果独立，独立不用管不独立会影响结论 **https://blog.ml.cmu.edu/2020/08/31/7-causality/**
     - 反事实理论增强用户行为序列数据： Counterfactual Data-Augmented Sequential Recommendation
 ---
 # 图网络与推荐系统
