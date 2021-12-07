@@ -125,8 +125,7 @@
     - UBR4Rec: user behavior retrevial 
 
 - 对比学习
-
-    - 长尾物品和用户学习的更充分
+    - 长尾物品和用户学习的更充分: google item 塔的对比学习； general-purpose user representatioins
     - 对比学习三要素：
       - 如何构造编码器
       - 如何构造正负样本
