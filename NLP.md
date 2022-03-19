@@ -9,10 +9,15 @@
       
         >$p(\theta_v) = \frac{n_v}{n}$, 数据集D中wordv出现的频次/数据集中单词的总个数n
         
-    - 最后后验估计: 参数的似然分布为多项分布，先验假设为Dilichlet分布，则参数的后验分布也为Dilichlet分布
+    - 最大后验估计: 参数的似然分布为多项分布，先验假设为Dilichlet分布，则参数的后验分布也为Dilichlet分布
     
-    - 
-- pLSA(概率隐语义分析)
+- LSI（潜在语义分析）
+
+    - 文档-词项矩阵
+    - SVD分解
+    - 得到词项、文档的概念表示，可计算相似度
+
+- pLSA(概率隐语义分析，最大似然)
     - 规律：相同主题的词经常出现在同一文档中，不同主题的词很少出现在同一文档中
     - 模型假设： 整个语料共享K个主题，每个主题都有生成单词的概率分布，每个docement是K个主题的混合（混合比例固定)
         $$
@@ -32,19 +37,21 @@
                 (2). $\theta_{t,v}^{<m+1>} = \frac{\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}{\sum_{v=1}^{V}\sum_{i=1}^{N}c(i,v)p(topic_t|D_i,word_v)}$
                         - 单词$word_v$在数据集$D$中属于$topic_t$的频率(按概率计算)与数据集中属于主题$topic_t$的总频率(按概率计算)
     
-- LDA（隐Delichilet分析）
-    - pLSA中参数$\mathbf{\varphi}$,$\mathbf{\theta}$是常数, 而LDA 假设$\mathbb{\varphi}$,$\mathbb{\theta}$是随机变量, 具有先验分布
+- LDA（隐Delichilet分析，最大后验）
+    - pLSA中参数$\mathbf{\varphi}$,$\mathbf{\theta}$是常数,  而LDA 假设每篇文档的$\mathbb{\varphi_m}$,$\mathbb{\theta_m}$是随机变量, 具有超参分别为$\alpha,\beta$ (所有文档公用）的dirichlet先验分布，$D_i$的主题分布和主题单词分布假设服从dirichlet先验(为多项式分布的共轭分布)
     - 一篇文档的主题分布不再固定，主题的单词分布也不再固定
-    - $D_i$的主题分布和主题单词分布假设服从dirichlet先验(dirichlet为多项式分布的共轭分布)
+    - 参数空间不会随着文档数的增加而增加，但是常需要计算统计量(期望)作为文档-主题，主题-单词分布的估计；pLSA中都是要学习的参数；
+    - Dir($\alpha$), Dir($\beta$)作为$\mathbb{\varphi_m}，\mathbb{\theta_m}$先验分布，根据所有观测到的文档和单词，计算$\theta_m,\varphi_m$ 的后验分布,也是Dir分布，将Dir分布的期望作为最后的结果
     - 求解方法：
         - 基本假设，同一篇文档中的相同单词来自同一主题
         - 变分推断
         - 吉布斯采样
+    - 推理时： 保持训练文档中主题-单词分布不变， 在新文档上运行gibbs采样，得到文档-主题的dir分布，其期望作为输出
 ## 2. 词向量
 - 概览
 ![分布式表示](./assets/distpresentation.PNG)
 1. **基于全局矩阵分解**
-    
+   
     - VSM(向量空间模型)
         - document-word 矩阵$\mathbf{W_{ij}}$，矩阵元素可以是单词是否出现（0，1）或者单词的统计特征tf-idf
         - 文档相似度： $sim(Di,Dj) = cos(\mathbb{w_i},\mathbb{w_j})$
@@ -316,7 +323,6 @@
     - sparse prior(bayesian compression): 各种先验
     - sparse matrix factrorization (ALBERT)
     - knowledge distillation(tinyBERT)
-    
     
 11. transformer 的变种( https://arxiv.org/pdf/2009.06732 )
     - 集中在low rank kernel/ fixed random pattern/ learnable pattern/ memory/ recurrence
